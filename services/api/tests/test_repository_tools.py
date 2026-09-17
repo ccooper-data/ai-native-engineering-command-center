@@ -1,10 +1,16 @@
 import pytest
 
 from app.contracts import EngineeringArtifact, ProposedFileChange
-from app.repository_tools import DryRunRepositoryExecutor, RepositoryPolicyError
+from app.repository_tools import (
+    DryRunRepositoryExecutor,
+    GovernedRepositoryExecutor,
+    RepositoryPolicyError,
+)
 
 
-def artifact(path: str = "src/capability/service.py", branch: str = "agent/test-change") -> EngineeringArtifact:
+def artifact(
+    path: str = "src/capability/service.py", branch: str = "agent/test-change"
+) -> EngineeringArtifact:
     return EngineeringArtifact(
         branch_name=branch,
         commit_message="feat: bounded change",
@@ -23,11 +29,37 @@ def artifact(path: str = "src/capability/service.py", branch: str = "agent/test-
     )
 
 
+class RecordingMutationClient:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str]] = []
+
+    def create_branch(self, branch_name: str) -> None:
+        self.calls.append(("branch", branch_name))
+
+    def create_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None:
+        self.calls.append(("create", f"{branch_name}:{change.path}:{message}"))
+
+    def update_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None:
+        self.calls.append(("update", f"{branch_name}:{change.path}:{message}"))
+
+    def delete_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None:
+        self.calls.append(("delete", f"{branch_name}:{change.path}:{message}"))
+
+
 def test_dry_run_accepts_bounded_agent_change() -> None:
     result = DryRunRepositoryExecutor().apply(artifact())
     assert result.dry_run is True
     assert result.branch_name == "agent/test-change"
     assert result.applied_paths == ["src/capability/service.py"]
+
+
+def test_governed_executor_delegates_only_after_policy_validation() -> None:
+    client = RecordingMutationClient()
+    result = GovernedRepositoryExecutor(client).apply(artifact())
+    assert result.dry_run is False
+    assert result.applied_paths == ["src/capability/service.py"]
+    assert client.calls[0] == ("branch", "agent/test-change")
+    assert client.calls[1][0] == "create"
 
 
 @pytest.mark.parametrize(
@@ -36,8 +68,11 @@ def test_dry_run_accepts_bounded_agent_change() -> None:
         ("../escape.py", "agent/test"),
         (".github/workflows/ci.yml", "agent/test"),
         ("src/ok.py", "main"),
+        ("src/ok.py", "agent/main"),
     ],
 )
 def test_repository_policy_blocks_unsafe_authority(path: str, branch: str) -> None:
+    client = RecordingMutationClient()
     with pytest.raises(RepositoryPolicyError):
-        DryRunRepositoryExecutor().apply(artifact(path=path, branch=branch))
+        GovernedRepositoryExecutor(client).apply(artifact(path=path, branch=branch))
+    assert client.calls == []
