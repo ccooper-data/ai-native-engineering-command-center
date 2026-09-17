@@ -5,7 +5,9 @@ from .contracts import AuditEvent, ProductRequest, RunStatus, WorkflowRun
 from .graph import build_engineering_graph
 from .providers import (
     ArchitectureProvider,
+    EngineeringProvider,
     MockArchitectureProvider,
+    MockEngineeringProvider,
     MockPlanningProvider,
     PlanningProvider,
 )
@@ -23,13 +25,16 @@ class EngineeringWorkflowService:
         repository: RunRepository,
         planning_provider: PlanningProvider | None = None,
         architecture_provider: ArchitectureProvider | None = None,
+        engineering_provider: EngineeringProvider | None = None,
     ) -> None:
         self.repository = repository
         self.planning_provider = planning_provider or MockPlanningProvider()
         self.architecture_provider = architecture_provider or MockArchitectureProvider()
+        self.engineering_provider = engineering_provider or MockEngineeringProvider()
         self.graph = build_engineering_graph(
             self.planning_provider,
             self.architecture_provider,
+            self.engineering_provider,
         )
 
     def create_and_run(self, product_request: ProductRequest) -> WorkflowRun:
@@ -38,9 +43,7 @@ class EngineeringWorkflowService:
             provider=self.planning_provider.name,
             model=self.planning_provider.model,
             status=RunStatus.PLANNING,
-            audit_events=[
-                AuditEvent(agent="system", action="workflow_created", status="success")
-            ],
+            audit_events=[AuditEvent(agent="system", action="workflow_created", status="success")],
         )
         self.repository.save(run)
 
@@ -50,11 +53,13 @@ class EngineeringWorkflowService:
                 "status": run.status,
                 "planning": None,
                 "architecture": None,
+                "engineering": None,
                 "audit_events": run.audit_events,
             }
         )
         run.status = result["status"]
         run.planning = result["planning"]
         run.architecture = result["architecture"]
+        run.engineering = result["engineering"]
         run.audit_events = result["audit_events"]
         return self.repository.save(run)
