@@ -1,4 +1,7 @@
-from .contracts import CIJobEvidence, CIValidationArtifact
+from .contracts import (
+    CIJobEvidence,
+    CIValidationArtifact,
+)
 
 
 REQUIRED_JOBS = {"backend", "frontend", "security"}
