@@ -11,9 +11,23 @@ from app.config import Settings
 T = TypeVar("T", bound=BaseModel)
 
 
+class ModelUsage(BaseModel):
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+
+class GenerationMetadata(BaseModel):
+    provider: str
+    model: str
+    response_id: str | None = None
+    usage: ModelUsage = ModelUsage()
+
+
 class StructuredLLM(ABC):
     name: str
     model: str
+    last_generation: GenerationMetadata | None = None
 
     @abstractmethod
     def generate(self, *, system: str, prompt: str, schema: type[T]) -> T:
@@ -26,6 +40,7 @@ class OpenAIStructuredLLM(StructuredLLM):
     def __init__(self, api_key: str, model: str) -> None:
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model
+        self.last_generation = None
 
     def generate(self, *, system: str, prompt: str, schema: type[T]) -> T:
         response = self.client.responses.parse(
@@ -36,6 +51,17 @@ class OpenAIStructuredLLM(StructuredLLM):
         )
         if response.output_parsed is None:
             raise RuntimeError("OpenAI returned no structured output")
+        usage = response.usage
+        self.last_generation = GenerationMetadata(
+            provider=self.name,
+            model=self.model,
+            response_id=response.id,
+            usage=ModelUsage(
+                input_tokens=getattr(usage, "input_tokens", 0) or 0,
+                output_tokens=getattr(usage, "output_tokens", 0) or 0,
+                total_tokens=getattr(usage, "total_tokens", 0) or 0,
+            ),
+        )
         return response.output_parsed
 
 
@@ -45,6 +71,7 @@ class AnthropicStructuredLLM(StructuredLLM):
     def __init__(self, api_key: str, model: str) -> None:
         self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
+        self.last_generation = None
 
     def generate(self, *, system: str, prompt: str, schema: type[T]) -> T:
         message = self.client.messages.create(
@@ -60,6 +87,16 @@ class AnthropicStructuredLLM(StructuredLLM):
             },
         )
         text = "".join(block.text for block in message.content if block.type == "text")
+        self.last_generation = GenerationMetadata(
+            provider=self.name,
+            model=self.model,
+            response_id=message.id,
+            usage=ModelUsage(
+                input_tokens=message.usage.input_tokens,
+                output_tokens=message.usage.output_tokens,
+                total_tokens=message.usage.input_tokens + message.usage.output_tokens,
+            ),
+        )
         return schema.model_validate(json.loads(text))
 
 
