@@ -9,6 +9,8 @@ class RunStatus(str, Enum):
     CREATED = "created"
     PLANNING = "planning"
     PLANNED = "planned"
+    ARCHITECTING = "architecting"
+    ARCHITECTED = "architected"
     FAILED = "failed"
 
 
@@ -33,6 +35,26 @@ class PlanningArtifact(BaseModel):
     implementation_tasks: list[str]
 
 
+class ArchitectureDecision(BaseModel):
+    id: str
+    title: str
+    decision: str
+    rationale: str
+    consequences: list[str]
+
+
+class ArchitectureArtifact(BaseModel):
+    summary: str
+    affected_components: list[str]
+    data_flow: list[str]
+    api_changes: list[str]
+    data_changes: list[str]
+    security_controls: list[str]
+    observability_requirements: list[str]
+    decisions: list[ArchitectureDecision]
+    implementation_sequence: list[str]
+
+
 class AuditEvent(BaseModel):
     agent: str
     action: str
@@ -45,6 +67,7 @@ class WorkflowRun(BaseModel):
     original_request: str
     status: RunStatus = RunStatus.CREATED
     planning: PlanningArtifact | None = None
+    architecture: ArchitectureArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
     provider: str = "mock"
     model: str = "deterministic-v1"
