@@ -16,6 +16,22 @@ class CostReservation:
     reserved_usd: float
 
 
+@dataclass
+class RunCostBudget:
+    max_run_cost_usd: float
+    reserved_usd: float = 0.0
+
+    @property
+    def remaining_usd(self) -> float:
+        return max(0.0, self.max_run_cost_usd - self.reserved_usd)
+
+    def reserve(self, reservation: CostReservation) -> None:
+        projected = self.reserved_usd + reservation.reserved_usd
+        if projected > self.max_run_cost_usd:
+            raise CostPolicyError(f"Run reservation would reach ${projected:.4f}; run ceiling is ${self.max_run_cost_usd:.4f}")
+        self.reserved_usd = projected
+
+
 def reserve_standard_text_cost(*, provider: str, model: str, max_input_tokens: int, max_output_tokens: int, max_call_cost_usd: float) -> CostReservation:
     price = MODEL_PRICES.get((provider, model))
     if price is None:
