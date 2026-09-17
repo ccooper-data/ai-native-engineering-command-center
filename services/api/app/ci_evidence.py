@@ -1,5 +1,4 @@
-from . import contracts
-
+from app import contracts
 
 REQUIRED_JOBS = {"backend", "frontend", "security"}
 
