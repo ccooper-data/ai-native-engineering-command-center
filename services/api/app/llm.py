@@ -39,7 +39,19 @@ class StructuredLLM(ABC):
 class OpenAIStructuredLLM(StructuredLLM):
     name = "openai"
 
-    def __init__(\n        self,\n        api_key: str,\n        model: str,\n        settings: Settings,\n        run_budget: RunCostBudget | None = None,\n    ) -> None:\n        self.client = openai.OpenAI(api_key=api_key)\n        self.model = model\n        self.settings = settings\n        self.run_budget = run_budget or RunCostBudget(\n            max_run_cost_usd=settings.llm_max_cost_per_run_usd\n        )
+    def __init__(
+        self,
+        api_key: str,
+        model: str,
+        settings: Settings,
+        run_budget: RunCostBudget | None = None,
+    ) -> None:
+        self.client = openai.OpenAI(api_key=api_key)
+        self.model = model
+        self.settings = settings
+        self.run_budget = run_budget or RunCostBudget(
+            max_run_cost_usd=settings.llm_max_cost_per_run_usd
+        )
         self.last_generation = None
 
     def generate(self, *, system: str, prompt: str, schema: type[T]) -> T:
@@ -111,14 +123,19 @@ class AnthropicStructuredLLM(StructuredLLM):
         return schema.model_validate(json.loads(text))
 
 
-def build_structured_llm(\n    settings: Settings,\n    run_budget: RunCostBudget | None = None,\n) -> StructuredLLM | None:
+def build_structured_llm(
+    settings: Settings,
+    run_budget: RunCostBudget | None = None,
+) -> StructuredLLM | None:
     provider = settings.llm_provider.lower()
     if provider == "mock":
         return None
     if provider == "openai":
         if not settings.openai_api_key:
             raise ValueError("COMMAND_CENTER_OPENAI_API_KEY is required for the OpenAI provider")
-        return OpenAIStructuredLLM(\n            settings.openai_api_key, settings.openai_model, settings, run_budget\n        )
+        return OpenAIStructuredLLM(
+            settings.openai_api_key, settings.openai_model, settings, run_budget
+        )
     if provider == "anthropic":
         if not settings.anthropic_api_key:
             raise ValueError("COMMAND_CENTER_ANTHROPIC_API_KEY is required for the Anthropic provider")
