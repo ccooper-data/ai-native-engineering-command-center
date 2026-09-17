@@ -109,6 +109,21 @@ class QualityGateArtifact(BaseModel):
     decision: str
 
 
+class CIJobEvidence(BaseModel):
+    name: str
+    conclusion: str
+    passed: bool
+    checks: list[str] = Field(default_factory=list)
+
+
+class CIValidationArtifact(BaseModel):
+    run_id: int
+    commit_sha: str
+    passed: bool
+    jobs: list[CIJobEvidence]
+    source: str = "github-actions"
+
+
 class TraceabilityItem(BaseModel):
     acceptance_criterion_id: str
     implementation_evidence: list[str]
@@ -154,6 +169,7 @@ class WorkflowRun(BaseModel):
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
+    ci_validation: CIValidationArtifact | None = None
     review: ReviewArtifact | None = None
     approval: ApprovalArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
