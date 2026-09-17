@@ -7,6 +7,7 @@ from .contracts import (
     ApprovalDecision,
     AuditEvent,
     CIValidationArtifact,
+    ModelUsageArtifact,
     ProductRequest,
     RunStatus,
     WorkflowRun,
@@ -93,6 +94,21 @@ class EngineeringWorkflowService:
         )
         for field in fields:
             setattr(run, field, result[field])
+
+        llm = getattr(self.planning_provider, "llm", None)
+        generation = getattr(llm, "last_generation", None)
+        if generation is not None:
+            run.planning_usage = ModelUsageArtifact(
+                provider=generation.provider,
+                model=generation.model,
+                response_id=generation.response_id,
+                input_tokens=generation.usage.input_tokens,
+                output_tokens=generation.usage.output_tokens,
+                total_tokens=generation.usage.total_tokens,
+            )
+            run.audit_events.append(
+                AuditEvent(agent="planning", action="record_model_usage", status="success")
+            )
         return self.repository.save(run)
 
     def record_ci_validation(
