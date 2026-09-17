@@ -13,6 +13,9 @@ class RunStatus(str, Enum):
     ARCHITECTED = "architected"
     ENGINEERING = "engineering"
     IMPLEMENTED = "implemented"
+    VALIDATING = "validating"
+    QUALITY_PASSED = "quality_passed"
+    REMEDIATION_REQUIRED = "remediation_required"
     FAILED = "failed"
 
 
@@ -74,6 +77,34 @@ class EngineeringArtifact(BaseModel):
     security_notes: list[str]
 
 
+class QualityFinding(BaseModel):
+    id: str
+    severity: str = Field(pattern="^(info|low|medium|high|critical)$")
+    category: str
+    message: str
+    blocking: bool = False
+
+
+class QAArtifact(BaseModel):
+    passed: bool
+    tests_planned: list[str]
+    findings: list[QualityFinding]
+    acceptance_criteria_verified: list[str]
+
+
+class SecurityArtifact(BaseModel):
+    passed: bool
+    scans_planned: list[str]
+    findings: list[QualityFinding]
+    controls_verified: list[str]
+
+
+class QualityGateArtifact(BaseModel):
+    passed: bool
+    blocking_findings: list[str]
+    decision: str
+
+
 class AuditEvent(BaseModel):
     agent: str
     action: str
@@ -88,6 +119,9 @@ class WorkflowRun(BaseModel):
     planning: PlanningArtifact | None = None
     architecture: ArchitectureArtifact | None = None
     engineering: EngineeringArtifact | None = None
+    qa: QAArtifact | None = None
+    security: SecurityArtifact | None = None
+    quality_gate: QualityGateArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
     provider: str = "mock"
     model: str = "deterministic-v1"
