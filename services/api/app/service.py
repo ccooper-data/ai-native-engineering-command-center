@@ -122,6 +122,24 @@ class EngineeringWorkflowService:
             run.audit_events.append(
                 AuditEvent(agent="planning", action="record_model_usage", status="success")
             )
+        architecture_llm = getattr(self.architecture_provider, "llm", None)
+        architecture_generation = getattr(architecture_llm, "last_generation", None)
+        if architecture_generation is not None:
+            run.architecture_usage = ModelUsageArtifact(
+                provider=architecture_generation.provider,
+                model=architecture_generation.model,
+                response_id=architecture_generation.response_id,
+                input_tokens=architecture_generation.usage.input_tokens,
+                output_tokens=architecture_generation.usage.output_tokens,
+                total_tokens=architecture_generation.usage.total_tokens,
+            )
+            run.audit_events.append(
+                AuditEvent(
+                    agent="architecture",
+                    action="record_model_usage",
+                    status="success",
+                )
+            )
         return self.repository.save(run)
 
     def record_ci_validation(
