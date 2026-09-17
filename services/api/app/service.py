@@ -5,6 +5,7 @@ from .contracts import (
     ApprovalArtifact,
     ApprovalDecision,
     AuditEvent,
+    CIValidationArtifact,
     ProductRequest,
     RunStatus,
     WorkflowRun,
@@ -60,11 +61,39 @@ class EngineeringWorkflowService:
             }
         )
         fields = (
-            "status", "planning", "architecture", "engineering", "qa", "security",
-            "quality_gate", "review", "audit_events",
+            "status",
+            "planning",
+            "architecture",
+            "engineering",
+            "qa",
+            "security",
+            "quality_gate",
+            "review",
+            "audit_events",
         )
         for field in fields:
             setattr(run, field, result[field])
+        return self.repository.save(run)
+
+    def record_ci_validation(
+        self,
+        run_id: UUID,
+        validation: CIValidationArtifact,
+        expected_commit_sha: str,
+    ) -> WorkflowRun | None:
+        run = self.repository.get(run_id)
+        if run is None:
+            return None
+        if validation.commit_sha != expected_commit_sha:
+            raise ValueError("CI evidence commit SHA does not match the executed change set")
+        run.ci_validation = validation
+        run.audit_events.append(
+            AuditEvent(
+                agent="ci",
+                action="record_executable_validation",
+                status="success" if validation.passed else "failed",
+            )
+        )
         return self.repository.save(run)
 
     def record_human_approval(
@@ -75,6 +104,8 @@ class EngineeringWorkflowService:
             return None
         if run.status != RunStatus.AWAITING_APPROVAL or run.review is None or not run.review.passed:
             raise ValueError("Workflow is not eligible for human approval")
+        if run.ci_validation is None or not run.ci_validation.passed:
+            raise ValueError("Successful executable CI evidence is required before human approval")
         run.approval = ApprovalArtifact(
             approved=decision.approved,
             approver=decision.approver,
