@@ -11,6 +11,8 @@ class RunStatus(str, Enum):
     PLANNED = "planned"
     ARCHITECTING = "architecting"
     ARCHITECTED = "architected"
+    ENGINEERING = "engineering"
+    IMPLEMENTED = "implemented"
     FAILED = "failed"
 
 
@@ -55,6 +57,23 @@ class ArchitectureArtifact(BaseModel):
     implementation_sequence: list[str]
 
 
+class ProposedFileChange(BaseModel):
+    path: str
+    operation: str = Field(pattern="^(create|update|delete)$")
+    purpose: str
+    content: str | None = None
+
+
+class EngineeringArtifact(BaseModel):
+    branch_name: str
+    commit_message: str
+    summary: str
+    files: list[ProposedFileChange]
+    acceptance_criteria_addressed: list[str]
+    tests_required: list[str]
+    security_notes: list[str]
+
+
 class AuditEvent(BaseModel):
     agent: str
     action: str
@@ -68,6 +87,7 @@ class WorkflowRun(BaseModel):
     status: RunStatus = RunStatus.CREATED
     planning: PlanningArtifact | None = None
     architecture: ArchitectureArtifact | None = None
+    engineering: EngineeringArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
     provider: str = "mock"
     model: str = "deterministic-v1"
