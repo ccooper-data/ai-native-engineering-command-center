@@ -175,6 +175,7 @@ class WorkflowRun(BaseModel):
     planning: PlanningArtifact | None = None
     planning_usage: ModelUsageArtifact | None = None
     architecture: ArchitectureArtifact | None = None
+    architecture_usage: ModelUsageArtifact | None = None
     engineering: EngineeringArtifact | None = None
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
