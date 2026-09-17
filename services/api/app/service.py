@@ -1,6 +1,7 @@
 from typing import Protocol
 from uuid import UUID
 
+from .config import Settings, settings
 from .contracts import (
     ApprovalArtifact,
     ApprovalDecision,
@@ -11,7 +12,14 @@ from .contracts import (
     WorkflowRun,
 )
 from .graph import build_engineering_graph
-from .providers import MockArchitectureProvider, MockEngineeringProvider, MockPlanningProvider
+from .llm import build_structured_llm
+from .providers import (
+    LLMPlanningProvider,
+    MockArchitectureProvider,
+    MockEngineeringProvider,
+    MockPlanningProvider,
+    PlanningProvider,
+)
 from .quality import MockQAProvider, MockSecurityProvider
 
 
@@ -21,10 +29,22 @@ class RunRepository(Protocol):
     def get(self, run_id: UUID) -> WorkflowRun | None: ...
 
 
+def build_planning_provider(runtime_settings: Settings) -> PlanningProvider:
+    llm = build_structured_llm(runtime_settings)
+    if llm is None:
+        return MockPlanningProvider()
+    return LLMPlanningProvider(llm)
+
+
 class EngineeringWorkflowService:
-    def __init__(self, repository: RunRepository) -> None:
+    def __init__(
+        self,
+        repository: RunRepository,
+        runtime_settings: Settings | None = None,
+    ) -> None:
         self.repository = repository
-        self.planning_provider = MockPlanningProvider()
+        self.settings = runtime_settings or settings
+        self.planning_provider = build_planning_provider(self.settings)
         self.architecture_provider = MockArchitectureProvider()
         self.engineering_provider = MockEngineeringProvider()
         self.qa_provider = MockQAProvider()
