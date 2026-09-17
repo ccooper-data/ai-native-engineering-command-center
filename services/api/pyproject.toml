@@ -11,6 +11,8 @@ dependencies = [
   "sqlalchemy>=2.0,<3",
   "psycopg[binary]>=3.2,<4",
   "langgraph>=0.6,<1",
+  "openai>=2,<3",
+  "anthropic>=1,<2",
 ]
 
 [project.optional-dependencies]
