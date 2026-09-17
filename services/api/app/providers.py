@@ -1,6 +1,11 @@
 from abc import ABC, abstractmethod
 
-from .contracts import AcceptanceCriterion, PlanningArtifact
+from .contracts import (
+    AcceptanceCriterion,
+    ArchitectureArtifact,
+    ArchitectureDecision,
+    PlanningArtifact,
+)
 
 
 class PlanningProvider(ABC):
@@ -9,6 +14,15 @@ class PlanningProvider(ABC):
 
     @abstractmethod
     def plan(self, product_request: str) -> PlanningArtifact:
+        raise NotImplementedError
+
+
+class ArchitectureProvider(ABC):
+    name: str
+    model: str
+
+    @abstractmethod
+    def design(self, product_request: str, plan: PlanningArtifact) -> ArchitectureArtifact:
         raise NotImplementedError
 
 
@@ -74,5 +88,89 @@ class MockPlanningProvider(PlanningProvider):
                 "Implement changes on an isolated Git branch",
                 "Execute automated QA and security checks",
                 "Review acceptance-criteria coverage before human approval",
+            ],
+        )
+
+
+class MockArchitectureProvider(ArchitectureProvider):
+    """Deterministic architecture provider for the first multi-agent handoff."""
+
+    name = "mock"
+    model = "deterministic-v1"
+
+    def design(self, product_request: str, plan: PlanningArtifact) -> ArchitectureArtifact:
+        return ArchitectureArtifact(
+            summary=(
+                "Implement the requested capability as an authenticated API-backed feature with "
+                "durable data, explicit contracts, client integration, and observable execution."
+            ),
+            affected_components=[
+                "Next.js client experience",
+                "FastAPI application API",
+                "PostgreSQL persistence layer",
+                "Background/agent workflow",
+                "CI/CD quality gates",
+            ],
+            data_flow=[
+                "Authorized client requests capability",
+                "API validates identity, authorization, and request contract",
+                "Service reads or computes the required result",
+                "Durable result/metadata is persisted where required",
+                "API returns versioned response to client",
+                "Telemetry records execution without sensitive payload leakage",
+            ],
+            api_changes=[
+                "Define versioned REST contract for the new capability",
+                "Document success, validation, authorization, and unavailable-result responses",
+                "Add contract tests to prevent client/API drift",
+            ],
+            data_changes=[
+                "Persist capability metadata and version identifiers when required",
+                "Use migration-controlled schema changes",
+                "Retain only data required by the approved product requirement",
+            ],
+            security_controls=[
+                "Reuse centralized authentication and enforce resource-level authorization",
+                "Prevent secrets and sensitive customer data from entering logs or model prompts",
+                "Run dependency, secret, and static-analysis checks before review",
+                "Require explicit human approval before production deployment",
+            ],
+            observability_requirements=[
+                "Trace request and workflow identifiers across services",
+                "Record latency, failure rate, and dependency errors",
+                "Emit auditable agent/tool events without storing sensitive content",
+            ],
+            decisions=[
+                ArchitectureDecision(
+                    id="ADR-AGENT-001",
+                    title="Contract-first service boundary",
+                    decision="Expose the capability through a versioned REST API before client coupling.",
+                    rationale=(
+                        "The plan requires client access while preserving independent backend and "
+                        "frontend evolution and executable acceptance tests."
+                    ),
+                    consequences=[
+                        "Requires OpenAPI and contract-test maintenance",
+                        "Allows web/mobile clients to evolve independently",
+                    ],
+                ),
+                ArchitectureDecision(
+                    id="ADR-AGENT-002",
+                    title="Human-controlled production transition",
+                    decision="Keep merge/deployment authorization outside LLM authority.",
+                    rationale="Production state transitions are consequential and require accountable approval.",
+                    consequences=[
+                        "Autonomous work pauses at the approval gate",
+                        "Approval identity and timestamp become auditable workflow evidence",
+                    ],
+                ),
+            ],
+            implementation_sequence=[
+                "Finalize API and data contracts",
+                "Implement persistence/service changes",
+                "Implement client integration",
+                "Add functional, contract, and security tests",
+                "Run independent QA/security review",
+                "Require human approval before merge/deployment",
             ],
         )
