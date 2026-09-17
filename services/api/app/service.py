@@ -1,27 +1,20 @@
+from typing import Protocol
 from uuid import UUID
 
 from .contracts import AuditEvent, ProductRequest, RunStatus, WorkflowRun
 from .providers import MockPlanningProvider, PlanningProvider
 
 
-class InMemoryRunRepository:
-    """Milestone-1 development repository. PostgreSQL replaces this before milestone completion."""
+class RunRepository(Protocol):
+    def save(self, run: WorkflowRun) -> WorkflowRun: ...
 
-    def __init__(self) -> None:
-        self._runs: dict[UUID, WorkflowRun] = {}
-
-    def save(self, run: WorkflowRun) -> WorkflowRun:
-        self._runs[run.id] = run
-        return run
-
-    def get(self, run_id: UUID) -> WorkflowRun | None:
-        return self._runs.get(run_id)
+    def get(self, run_id: UUID) -> WorkflowRun | None: ...
 
 
 class PlanningService:
     def __init__(
         self,
-        repository: InMemoryRunRepository,
+        repository: RunRepository,
         provider: PlanningProvider | None = None,
     ) -> None:
         self.repository = repository
