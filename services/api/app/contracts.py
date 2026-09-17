@@ -44,6 +44,15 @@ class PlanningArtifact(BaseModel):
     implementation_tasks: list[str]
 
 
+class ModelUsageArtifact(BaseModel):
+    provider: str
+    model: str
+    response_id: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+
 class ArchitectureDecision(BaseModel):
     id: str
     title: str
@@ -164,6 +173,7 @@ class WorkflowRun(BaseModel):
     original_request: str
     status: RunStatus = RunStatus.CREATED
     planning: PlanningArtifact | None = None
+    planning_usage: ModelUsageArtifact | None = None
     architecture: ArchitectureArtifact | None = None
     engineering: EngineeringArtifact | None = None
     qa: QAArtifact | None = None
