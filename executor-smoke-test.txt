@@ -1,0 +1,4 @@
+AI-Native Engineering Command Center
+
+Bounded repository execution smoke test.
+This file was written only to an isolated agent/* branch to prove that branch creation and file mutation can be separated from main and governed by repository policy.
