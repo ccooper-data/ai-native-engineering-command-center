@@ -1,17 +1,34 @@
+from contextlib import asynccontextmanager
 from uuid import UUID
 
 from fastapi import FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
 
 from .contracts import ProductRequest, WorkflowRun
-from .service import InMemoryRunRepository, PlanningService
+from .database import SqlRunRepository, create_schema
+from .service import PlanningService
+
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    create_schema()
+    yield
+
 
 app = FastAPI(
     title="AI-Native Engineering Command Center API",
     version="0.1.0",
     description="Auditable orchestration API for bounded autonomous software engineering.",
+    lifespan=lifespan,
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
-repository = InMemoryRunRepository()
+repository = SqlRunRepository()
 planning_service = PlanningService(repository=repository)
 
 
