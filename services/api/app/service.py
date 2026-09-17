@@ -15,12 +15,14 @@ from .contracts import (
 from .graph import build_engineering_graph
 from .llm import build_structured_llm
 from .providers import (
+    LLMArchitectureProvider,
     LLMPlanningProvider,
     MockArchitectureProvider,
     MockEngineeringProvider,
     MockPlanningProvider,
     PlanningProvider,
 )
+from .preflight import RunCostBudget
 from .quality import MockQAProvider, MockSecurityProvider
 
 
@@ -45,8 +47,19 @@ class EngineeringWorkflowService:
     ) -> None:
         self.repository = repository
         self.settings = runtime_settings or settings
-        self.planning_provider = build_planning_provider(self.settings)
-        self.architecture_provider = MockArchitectureProvider()
+        self.run_cost_budget = RunCostBudget(
+            max_run_cost_usd=self.settings.llm_max_cost_per_run_usd
+        )
+        planning_llm = build_structured_llm(self.settings, self.run_cost_budget)
+        self.planning_provider = (
+            MockPlanningProvider() if planning_llm is None else LLMPlanningProvider(planning_llm)
+        )
+        if self.settings.architecture_llm_enabled and planning_llm is not None:
+            architecture_llm = build_structured_llm(self.settings, self.run_cost_budget)
+            assert architecture_llm is not None
+            self.architecture_provider = LLMArchitectureProvider(architecture_llm)
+        else:
+            self.architecture_provider = MockArchitectureProvider()
         self.engineering_provider = MockEngineeringProvider()
         self.qa_provider = MockQAProvider()
         self.security_provider = MockSecurityProvider()
