@@ -14,6 +14,7 @@ from .contracts import (
 )
 from .graph import build_engineering_graph
 from .llm import build_structured_llm
+from .preflight import RunCostBudget
 from .providers import (
     LLMArchitectureProvider,
     LLMPlanningProvider,
@@ -22,7 +23,6 @@ from .providers import (
     MockPlanningProvider,
     PlanningProvider,
 )
-from .preflight import RunCostBudget
 from .quality import MockQAProvider, MockSecurityProvider
 
 
