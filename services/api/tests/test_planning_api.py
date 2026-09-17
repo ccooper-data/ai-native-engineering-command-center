@@ -10,7 +10,7 @@ def test_health() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_product_request_creates_traceable_multi_agent_design() -> None:
+def test_product_request_creates_persisted_three_agent_change_set() -> None:
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/runs",
@@ -21,17 +21,22 @@ def test_product_request_creates_traceable_multi_agent_design() -> None:
 
         assert response.status_code == 201
         run = response.json()
-        assert run["status"] == "architected"
+        assert run["status"] == "implemented"
         assert run["provider"] == "mock"
-        assert run["planning"]["acceptance_criteria"]
         assert run["planning"]["acceptance_criteria"][0]["id"] == "AC-001"
         assert run["architecture"]["decisions"][0]["id"] == "ADR-AGENT-001"
-        assert any(event["agent"] == "planning" for event in run["audit_events"])
-        assert any(event["agent"] == "architecture" for event in run["audit_events"])
+        assert run["engineering"]["branch_name"] == "agent/churn-capability"
+        assert len(run["engineering"]["files"]) == 2
+        assert [event["agent"] for event in run["audit_events"]] == [
+            "system",
+            "planning",
+            "architecture",
+            "engineering",
+        ]
 
         retrieved = client.get(f'/api/v1/runs/{run["id"]}')
         assert retrieved.status_code == 200
-        assert retrieved.json()["architecture"] == run["architecture"]
+        assert retrieved.json()["engineering"] == run["engineering"]
 
 
 def test_short_request_is_rejected() -> None:
