@@ -1,13 +1,11 @@
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
 from typing import TypeVar
 
 import anthropic
 import openai
 from pydantic import BaseModel
-
 from app.config import Settings
-
 
 T = TypeVar("T", bound=BaseModel)
 
