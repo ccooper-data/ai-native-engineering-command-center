@@ -69,6 +69,37 @@ class LLMPlanningProvider(PlanningProvider):
         return self.llm.generate(system=system, prompt=prompt, schema=PlanningArtifact)
 
 
+class LLMArchitectureProvider(ArchitectureProvider):
+    """Turns an approved plan into a schema-validated technical architecture."""
+
+    def __init__(self, llm: StructuredLLM) -> None:
+        self.llm = llm
+        self.name = llm.name
+        self.model = llm.model
+
+    def design(
+        self,
+        product_request: str,
+        plan: PlanningArtifact,
+    ) -> ArchitectureArtifact:
+        system = (
+            "You are the Architecture Agent in a governed software engineering system. "
+            "Design an implementation architecture from the approved PlanningArtifact. "
+            "Cover frontend, backend, APIs, persistence, ML/data flow, security controls, "
+            "observability, and implementation sequencing where relevant. Record important "
+            "tradeoffs as architecture decisions. Do not write repository code, claim tests "
+            "ran, approve deployment, or weaken human approval boundaries."
+        )
+        prompt = (
+            "Create the ArchitectureArtifact for the product request and approved plan below.\n\n"
+            f"PRODUCT REQUEST:\n{product_request}\n\n"
+            f"APPROVED PLAN:\n{plan.model_dump_json(indent=2)}\n\n"
+            "Preserve traceability to the plan and make security, data-flow, API, and "
+            "observability consequences explicit."
+        )
+        return self.llm.generate(system=system, prompt=prompt, schema=ArchitectureArtifact)
+
+
 class MockPlanningProvider(PlanningProvider):
     name = "mock"
     model = "deterministic-v1"
