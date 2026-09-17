@@ -8,6 +8,7 @@ from .contracts import (
     PlanningArtifact,
     ProposedFileChange,
 )
+from .llm import StructuredLLM
 
 
 class PlanningProvider(ABC):
@@ -40,6 +41,32 @@ class EngineeringProvider(ABC):
         architecture: ArchitectureArtifact,
     ) -> EngineeringArtifact:
         raise NotImplementedError
+
+
+class LLMPlanningProvider(PlanningProvider):
+    """Converts an ambiguous product request into a schema-validated planning artifact."""
+
+    def __init__(self, llm: StructuredLLM) -> None:
+        self.llm = llm
+        self.name = llm.name
+        self.model = llm.model
+
+    def plan(self, product_request: str) -> PlanningArtifact:
+        system = (
+            "You are the Planning/Product Agent in a governed software engineering system. "
+            "Translate the founder request into implementation-ready business and technical requirements. "
+            "Make assumptions explicit instead of inventing hidden facts. Acceptance criteria must be "
+            "specific and testable. Identify dependencies, risks, non-functional requirements, and a "
+            "sequenced implementation plan. Do not write code, approve deployment, or claim tests ran."
+        )
+        prompt = (
+            "Create the planning artifact for this product request:\n\n"
+            f"{product_request}\n\n"
+            "Use stable acceptance criterion identifiers beginning with AC-001. Ensure the artifact is "
+            "sufficient for a separate Architecture Agent to design the solution without guessing the "
+            "business objective or success conditions."
+        )
+        return self.llm.generate(system=system, prompt=prompt, schema=PlanningArtifact)
 
 
 class MockPlanningProvider(PlanningProvider):
