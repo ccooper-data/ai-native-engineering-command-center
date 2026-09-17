@@ -16,6 +16,10 @@ class RunStatus(str, Enum):
     VALIDATING = "validating"
     QUALITY_PASSED = "quality_passed"
     REMEDIATION_REQUIRED = "remediation_required"
+    REVIEWED = "reviewed"
+    AWAITING_APPROVAL = "awaiting_approval"
+    APPROVED = "approved"
+    REJECTED = "rejected"
     FAILED = "failed"
 
 
@@ -105,6 +109,34 @@ class QualityGateArtifact(BaseModel):
     decision: str
 
 
+class TraceabilityItem(BaseModel):
+    acceptance_criterion_id: str
+    implementation_evidence: list[str]
+    verification_evidence: list[str]
+    covered: bool
+
+
+class ReviewArtifact(BaseModel):
+    passed: bool
+    summary: str
+    traceability: list[TraceabilityItem]
+    findings: list[QualityFinding]
+    recommendation: str
+
+
+class ApprovalDecision(BaseModel):
+    approved: bool
+    approver: str = Field(min_length=2, max_length=200)
+    rationale: str = Field(min_length=3, max_length=2000)
+
+
+class ApprovalArtifact(BaseModel):
+    approved: bool
+    approver: str
+    rationale: str
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class AuditEvent(BaseModel):
     agent: str
     action: str
@@ -122,6 +154,8 @@ class WorkflowRun(BaseModel):
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
+    review: ReviewArtifact | None = None
+    approval: ApprovalArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
     provider: str = "mock"
     model: str = "deterministic-v1"
