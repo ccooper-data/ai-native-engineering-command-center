@@ -10,7 +10,7 @@ def test_health() -> None:
     assert response.json() == {"status": "ok"}
 
 
-def test_product_request_creates_traceable_plan() -> None:
+def test_product_request_creates_traceable_multi_agent_design() -> None:
     with TestClient(app) as client:
         response = client.post(
             "/api/v1/runs",
@@ -21,15 +21,17 @@ def test_product_request_creates_traceable_plan() -> None:
 
         assert response.status_code == 201
         run = response.json()
-        assert run["status"] == "planned"
+        assert run["status"] == "architected"
         assert run["provider"] == "mock"
         assert run["planning"]["acceptance_criteria"]
         assert run["planning"]["acceptance_criteria"][0]["id"] == "AC-001"
+        assert run["architecture"]["decisions"][0]["id"] == "ADR-AGENT-001"
         assert any(event["agent"] == "planning" for event in run["audit_events"])
+        assert any(event["agent"] == "architecture" for event in run["audit_events"])
 
         retrieved = client.get(f'/api/v1/runs/{run["id"]}')
         assert retrieved.status_code == 200
-        assert retrieved.json()["original_request"] == run["original_request"]
+        assert retrieved.json()["architecture"] == run["architecture"]
 
 
 def test_short_request_is_rejected() -> None:
