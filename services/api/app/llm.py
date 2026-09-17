@@ -6,7 +6,7 @@ import anthropic
 import openai
 from pydantic import BaseModel
 
-from .config import Settings
+from app.config import Settings
 
 
 T = TypeVar("T", bound=BaseModel)
