@@ -5,6 +5,7 @@ from typing import TypeVar
 import anthropic
 import openai
 from pydantic import BaseModel
+
 from app.config import Settings
 
 T = TypeVar("T", bound=BaseModel)
