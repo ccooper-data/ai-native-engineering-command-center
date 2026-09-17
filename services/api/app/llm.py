@@ -2,8 +2,8 @@ import json
 from abc import ABC, abstractmethod
 from typing import TypeVar
 
-from anthropic import Anthropic
-from openai import OpenAI
+import anthropic
+import openai
 from pydantic import BaseModel
 
 from .config import Settings
@@ -25,7 +25,7 @@ class OpenAIStructuredLLM(StructuredLLM):
     name = "openai"
 
     def __init__(self, api_key: str, model: str) -> None:
-        self.client = OpenAI(api_key=api_key)
+        self.client = openai.OpenAI(api_key=api_key)
         self.model = model
 
     def generate(self, *, system: str, prompt: str, schema: type[T]) -> T:
@@ -44,7 +44,7 @@ class AnthropicStructuredLLM(StructuredLLM):
     name = "anthropic"
 
     def __init__(self, api_key: str, model: str) -> None:
-        self.client = Anthropic(api_key=api_key)
+        self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
 
     def generate(self, *, system: str, prompt: str, schema: type[T]) -> T:
