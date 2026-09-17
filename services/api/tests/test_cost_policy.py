@@ -1,8 +1,8 @@
 import pytest
 
 from app.llm import ModelUsage
-from app.pricing import UnknownModelPriceError, estimate_standard_text_cost_usd
 from app.preflight import CostPolicyError, reserve_standard_text_cost
+from app.pricing import UnknownModelPriceError, estimate_standard_text_cost_usd
 
 
 def test_terra_cost_uses_versioned_standard_pricing() -> None:
