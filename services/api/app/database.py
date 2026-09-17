@@ -2,7 +2,7 @@ import json
 from uuid import UUID
 
 from sqlalchemy import DateTime, String, Text, create_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column, sessionmaker
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, sessionmaker
 
 from .config import settings
 from .contracts import WorkflowRun
