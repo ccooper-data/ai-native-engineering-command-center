@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum
 from uuid import UUID, uuid4
 
@@ -37,7 +37,7 @@ class AuditEvent(BaseModel):
     agent: str
     action: str
     status: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class WorkflowRun(BaseModel):
@@ -48,4 +48,4 @@ class WorkflowRun(BaseModel):
     audit_events: list[AuditEvent] = Field(default_factory=list)
     provider: str = "mock"
     model: str = "deterministic-v1"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
