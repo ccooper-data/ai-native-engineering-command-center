@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .contracts import ProductRequest, WorkflowRun
 from .database import SqlRunRepository, create_schema
-from .service import PlanningService
+from .service import EngineeringWorkflowService
 
 
 @asynccontextmanager
@@ -17,7 +17,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="AI-Native Engineering Command Center API",
-    version="0.1.0",
+    version="0.2.0",
     description="Auditable orchestration API for bounded autonomous software engineering.",
     lifespan=lifespan,
 )
@@ -29,7 +29,7 @@ app.add_middleware(
 )
 
 repository = SqlRunRepository()
-planning_service = PlanningService(repository=repository)
+workflow_service = EngineeringWorkflowService(repository=repository)
 
 
 @app.get("/health")
@@ -39,7 +39,7 @@ def health() -> dict[str, str]:
 
 @app.post("/api/v1/runs", response_model=WorkflowRun, status_code=status.HTTP_201_CREATED)
 def create_run(product_request: ProductRequest) -> WorkflowRun:
-    return planning_service.create_and_plan(product_request)
+    return workflow_service.create_and_run(product_request)
 
 
 @app.get("/api/v1/runs/{run_id}", response_model=WorkflowRun)
