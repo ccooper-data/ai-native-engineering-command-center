@@ -1,6 +1,7 @@
+from app.repository import InMemoryRunRepository
+
 from app.config import Settings
 from app.providers import LLMArchitectureProvider, LLMPlanningProvider, MockArchitectureProvider
-from app.repository import InMemoryRunRepository
 from app.service import EngineeringWorkflowService
 
 
