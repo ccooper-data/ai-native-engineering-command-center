@@ -6,7 +6,6 @@ from app.contracts import (
 )
 from app.management import build_management_view
 
-
 SHA = "a" * 40
 
 
