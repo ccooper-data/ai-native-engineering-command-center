@@ -11,7 +11,7 @@ type Engineering = { branch_name: string; summary: string; files: FileChange[]; 
 type Run = { id: string; status: string; provider: string; model: string; planning: Plan | null; architecture: Architecture | null; engineering: Engineering | null };
 type ManagementRun = { id: string; status: string; governance_evidence: { current_commit_sha: string | null; repository_branch: string | null; ci_run_ids: number[]; remediation_cycles: number; total_tokens: number; estimated_actual_cost_usd: number }; ci_passed: boolean | null; review_passed: boolean | null; approval_state: string; readiness: { state: "BLOCKED" | "VALIDATING" | "AWAITING_HUMAN" | "READY_FOR_DRAFT_PR"; reasons: string[] }; chain_of_custody: { mutation_sha: string | null; ci_sha: string | null; approval_sha: string | null; aligned: boolean; state: string }; traceability: { acceptance_criterion_id: string; architecture_evidence: string[]; implementation_evidence: string[]; verification_evidence: string[]; reviewer_verification: string[]; covered: boolean }[]; audit_events: { agent: string; action: string; status: string; timestamp: string; commit_sha: string | null; evidence_refs: string[] }[] };
 type GovernanceException = { code: string; severity: string; message: string; workflow_id: string; evidence: string[] };
-type Summary = { total_workflows: number; active_workflows: number; blocked_workflows: number; pending_approvals: number; ci_failures: number; review_failures: number; total_tokens: number; estimated_actual_cost_usd: number; exceptions: GovernanceException[] };
+type ControlEffectiveness = { faults_injected: number; faults_detected: number; faults_blocked: number; detection_rate: number; blocking_rate: number };\ntype Summary = { total_workflows: number; active_workflows: number; blocked_workflows: number; pending_approvals: number; ci_failures: number; review_failures: number; total_tokens: number; estimated_actual_cost_usd: number; exceptions: GovernanceException[] };
 
 const API = "http://localhost:8000";
 const example = "Add customer churn forecasting to our SaaS product and expose the results through the mobile app.";
@@ -20,7 +20,7 @@ const stages = ["Request", "Planning", "Architecture", "Engineering", "QA + Secu
 export default function Home() {
   const [request, setRequest] = useState(example);
   const [run, setRun] = useState<Run | null>(null);
-  const [summary, setSummary] = useState<Summary | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(null);\n  const [controls, setControls] = useState<ControlEffectiveness | null>(null);
   const [managementRun, setManagementRun] = useState<ManagementRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -30,7 +30,7 @@ export default function Home() {
     if (response.ok) setSummary(await response.json());
   }
 
-  useEffect(() => { void refreshSummary(); }, []);
+  useEffect(() => { void refreshSummary(); fetch(`${API}/api/v1/management/control-effectiveness`).then((response) => response.ok ? response.json() : null).then((data) => { if (data) setControls(data); }); }, []);
 
   async function submit(event: FormEvent) {
     event.preventDefault(); setLoading(true); setError("");
@@ -56,6 +56,7 @@ export default function Home() {
   return <main>
     <header><div><p className="eyebrow">AI-NATIVE ENGINEERING</p><h1>Executive Command Center</h1><p className="subtitle">Governed autonomy, quality evidence, cost control, and human decision rights.</p></div><span className="status">READ-ONLY GOVERNANCE VIEW</span></header>
     <section className="metrics">{cards.map(([label, value]) => <article className="metric" key={label}><span>{label}</span><strong>{value}</strong></article>)}</section>
+    {controls && <section className="controls panel"><div className="outputHeader"><div><p className="label">CONTROL EFFECTIVENESS</p><h2>DETERMINISTIC REPOSITORY FAULT BENCHMARK</h2></div><span className={controls.blocking_rate === 1 ? "badge pass" : "badge block"}>{(controls.blocking_rate * 100).toFixed(0)}% BLOCKED</span></div><div className="controlGrid"><article><span>Scenarios</span><strong>{controls.faults_injected}</strong></article><article><span>Detected</span><strong>{controls.faults_detected}</strong></article><article><span>Blocked</span><strong>{controls.faults_blocked}</strong></article><article><span>Detection rate</span><strong>{(controls.detection_rate * 100).toFixed(0)}%</strong></article></div><p className="benchmarkNote">Scope: defined deterministic repository-adversarial scenarios only. This metric is not a claim of universal security.</p></section>}
     {summary && summary.exceptions.length > 0 && <section className="exceptions panel"><div className="outputHeader"><div><p className="label">ATTENTION REQUIRED</p><h2>GOVERNANCE EXCEPTIONS</h2></div><span className="badge block">{summary.exceptions.length} OPEN</span></div><div className="exceptionList">{summary.exceptions.map((item, index) => <article key={item.workflow_id + item.code + index}><div className="traceHead"><strong>{item.code}</strong><span className={`badge ${item.severity === "critical" || item.severity === "high" ? "block" : "warn"}`}>{item.severity.toUpperCase()}</span></div><p>{item.message}</p><small>Workflow: {item.workflow_id}</small>{item.evidence.length > 0 && <small>Evidence: {item.evidence.join(", ")}</small>}</article>)}</div></section>}
     <section className="pipeline">{stages.map((stage, index) => <div className={index < 4 ? "stage active" : "stage"} key={stage}><span>{String(index + 1).padStart(2, "0")}</span>{stage}</div>)}</section>
     <section className="workspace">
