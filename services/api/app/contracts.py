@@ -145,8 +145,10 @@ class CIValidationArtifact(BaseModel):
 
 class TraceabilityItem(BaseModel):
     acceptance_criterion_id: str
+    architecture_evidence: list[str] = Field(default_factory=list)
     implementation_evidence: list[str]
     verification_evidence: list[str]
+    reviewer_verification: list[str] = Field(default_factory=list)
     covered: bool
 
 
