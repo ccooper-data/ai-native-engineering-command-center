@@ -9,7 +9,7 @@ type Architecture = { summary: string; affected_components: string[]; security_c
 type FileChange = { path: string; operation: string; purpose: string };
 type Engineering = { branch_name: string; summary: string; files: FileChange[]; tests_required: string[] };
 type Run = { id: string; status: string; provider: string; model: string; planning: Plan | null; architecture: Architecture | null; engineering: Engineering | null };
-type ManagementRun = { id: string; status: string; governance_evidence: { current_commit_sha: string | null; repository_branch: string | null; ci_run_ids: number[]; remediation_cycles: number; total_tokens: number; estimated_actual_cost_usd: number }; ci_passed: boolean | null; review_passed: boolean | null; approval_state: string };
+type ManagementRun = { id: string; status: string; governance_evidence: { current_commit_sha: string | null; repository_branch: string | null; ci_run_ids: number[]; remediation_cycles: number; total_tokens: number; estimated_actual_cost_usd: number }; ci_passed: boolean | null; review_passed: boolean | null; approval_state: string; audit_events: { agent: string; action: string; status: string; timestamp: string; commit_sha: string | null; evidence_refs: string[] }[] };
 type Summary = { total_workflows: number; active_workflows: number; blocked_workflows: number; pending_approvals: number; ci_failures: number; review_failures: number; total_tokens: number; estimated_actual_cost_usd: number };
 
 const API = "http://localhost:8000";
