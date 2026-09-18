@@ -60,5 +60,8 @@ def test_empty_token_is_rejected_before_verifier() -> None:
             actor_type="human",
             authentication_source="github-oidc",
             role="workflow-approver",
+            capability="approve-workflow",
+            workflow_id="workflow-123",
+            commit_sha="a" * 40,
         )
     assert verifier.tokens == []
