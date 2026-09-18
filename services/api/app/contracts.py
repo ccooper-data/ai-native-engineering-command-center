@@ -215,6 +215,7 @@ class ManagementRunView(BaseModel):
     review_passed: bool | None = None
     approval_state: str
     audit_events: list[AuditEvent] = Field(default_factory=list)
+    traceability: list[TraceabilityItem] = Field(default_factory=list)
     created_at: datetime
 
 
