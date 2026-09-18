@@ -5,6 +5,7 @@ from typing import Protocol
 from pydantic import BaseModel
 
 from .contracts import EngineeringArtifact, ProposedFileChange
+from .source_preflight import validate_source_preflight
 
 
 class RepositoryPolicyError(ValueError):
@@ -112,6 +113,11 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
 
     def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
         validate_change_set(artifact)
+        preflight = validate_source_preflight(artifact)
+        if not preflight.passed:
+            failed = [finding for finding in preflight.findings if not finding.passed]
+            detail = "; ".join(f"{item.path}: {item.message}" for item in failed)
+            raise RepositoryPolicyError(f"Source preflight failed: {detail}")
         if artifact.branch_name != self.authorized_branch:
             raise RepositoryPolicyError("Artifact branch does not match authorized branch")
         applied: list[str] = []
