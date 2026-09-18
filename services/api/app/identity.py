@@ -46,3 +46,21 @@ def require_capability(actor: ActorIdentity, capability: str) -> None:
         raise IdentityPolicyError(
             f"Actor role {actor.role!r} is not authorized for capability {capability!r}"
         )
+
+
+SENSITIVE_CAPABILITIES = {
+    "approve-workflow",
+    "resolve-repository-incident",
+}
+
+
+def require_human_capability(actor: ActorIdentity, capability: str) -> None:
+    require_capability(actor, capability)
+    if capability in SENSITIVE_CAPABILITIES and actor.actor_type != "human":
+        raise IdentityPolicyError(
+            f"Capability {capability!r} requires an authenticated human identity"
+        )
+    if capability in SENSITIVE_CAPABILITIES and actor.authentication_source not in TRUSTED_HUMAN_AUTH_SOURCES:
+        raise IdentityPolicyError(
+            f"Capability {capability!r} requires trusted human authentication"
+        )
