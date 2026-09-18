@@ -120,6 +120,14 @@ class QualityGateArtifact(BaseModel):
     decision: str
 
 
+class SourcePreflightEvidence(BaseModel):
+    passed: bool
+    checks: list[str] = Field(default_factory=list)
+    paths: list[str] = Field(default_factory=list)
+    tool_evidence: list[str] = Field(default_factory=list)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class RepositoryDryRunArtifact(BaseModel):
     passed: bool
     branch_name: str
@@ -300,6 +308,7 @@ class WorkflowRun(BaseModel):
     engineering: EngineeringArtifact | None = None
     engineering_usage: ModelUsageArtifact | None = None
     repository_dry_run: RepositoryDryRunArtifact | None = None
+    source_preflight: SourcePreflightEvidence | None = None
     verified_mutation_commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
     repository_incident: RepositoryIncident | None = None
     qa: QAArtifact | None = None
