@@ -1,6 +1,7 @@
 from .contracts import (
     ChainOfCustody,
     GovernanceException,
+    GovernanceReadiness,
     ManagementRunView,
     ManagementSummary,
     RunStatus,
@@ -27,6 +28,31 @@ def build_management_view(run: WorkflowRun) -> ManagementRunView:
         custody_state = "awaiting_approval"
     else:
         custody_state = "aligned"
+    reasons: list[str] = []
+    if run.verified_mutation_commit_sha is None:
+        readiness_state = "VALIDATING"
+        reasons.append("Verified repository mutation evidence is pending.")
+    elif run.ci_validation is None:
+        readiness_state = "VALIDATING"
+        reasons.append("Executable CI evidence is pending.")
+    elif not run.ci_validation.passed:
+        readiness_state = "BLOCKED"
+        reasons.append("Executable CI failed.")
+    elif run.review is None or not run.review.passed:
+        readiness_state = "BLOCKED"
+        reasons.append("Independent review is incomplete or blocking.")
+    elif not aligned:
+        readiness_state = "BLOCKED"
+        reasons.append("Mutation, CI, and approval identities are inconsistent.")
+    elif run.approval is None:
+        readiness_state = "AWAITING_HUMAN"
+        reasons.append("Current validated commit requires human approval.")
+    elif not run.approval.approved:
+        readiness_state = "BLOCKED"
+        reasons.append("Human approval was not granted.")
+    else:
+        readiness_state = "READY_FOR_DRAFT_PR"
+        reasons.append("Mutation, CI, review, and human approval evidence are aligned.")
     return ManagementRunView(
         id=run.id,
         status=run.status,
@@ -39,6 +65,7 @@ def build_management_view(run: WorkflowRun) -> ManagementRunView:
         approval_state=approval_state,
         audit_events=sorted(run.audit_events, key=lambda event: event.timestamp),
         traceability=run.review.traceability if run.review is not None else [],
+        readiness=GovernanceReadiness(state=readiness_state, reasons=reasons),
         chain_of_custody=ChainOfCustody(
             mutation_sha=mutation_sha,
             ci_sha=ci_sha,
