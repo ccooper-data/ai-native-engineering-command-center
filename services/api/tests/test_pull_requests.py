@@ -15,6 +15,7 @@ def approved_run():
         approved=True,
         approver="Cory Cooper",
         rationale="Reviewed quality, security, and traceability evidence.",
+        commit_sha="a" * 40,
     )
     return run
 
