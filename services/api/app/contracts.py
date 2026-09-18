@@ -160,15 +160,22 @@ class ReviewArtifact(BaseModel):
     recommendation: str
 
 
+class ActorIdentity(BaseModel):
+    identity_id: str = Field(min_length=1)
+    actor_type: str = Field(pattern="^(human|service|agent)$")
+    authentication_source: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+
+
 class ApprovalDecision(BaseModel):
     approved: bool
-    approver: str = Field(min_length=2, max_length=200)
+    approver: ActorIdentity
     rationale: str = Field(min_length=3, max_length=2000)
 
 
 class ApprovalArtifact(BaseModel):
     approved: bool
-    approver: str
+    approver: ActorIdentity
     rationale: str
     commit_sha: str = Field(min_length=40, max_length=40)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -191,13 +198,6 @@ class GovernanceEvidence(BaseModel):
     remediation_cycles: int = Field(default=0, ge=0)
     total_tokens: int = Field(default=0, ge=0)
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
-
-
-class ActorIdentity(BaseModel):
-    identity_id: str = Field(min_length=1)
-    actor_type: str = Field(pattern="^(human|service|agent)$")
-    authentication_source: str = Field(min_length=1)
-    role: str = Field(min_length=1)
 
 
 class IncidentResolution(BaseModel):
