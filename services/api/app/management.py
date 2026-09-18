@@ -1,4 +1,5 @@
 from .contracts import (
+    ChainOfCustody,
     GovernanceException,
     ManagementRunView,
     ManagementSummary,
@@ -13,6 +14,19 @@ def build_management_view(run: WorkflowRun) -> ManagementRunView:
         approval_state = "pending"
     else:
         approval_state = "approved" if run.approval.approved else "rejected"
+    mutation_sha = run.verified_mutation_commit_sha
+    ci_sha = run.ci_validation.commit_sha if run.ci_validation is not None else None
+    approval_sha = run.approval.commit_sha if run.approval is not None else None
+    present = [sha for sha in (mutation_sha, ci_sha, approval_sha) if sha is not None]
+    aligned = len(set(present)) <= 1
+    if not present:
+        custody_state = "pending_mutation"
+    elif not aligned:
+        custody_state = "identity_mismatch"
+    elif approval_sha is None:
+        custody_state = "awaiting_approval"
+    else:
+        custody_state = "aligned"
     return ManagementRunView(
         id=run.id,
         status=run.status,
@@ -25,6 +39,13 @@ def build_management_view(run: WorkflowRun) -> ManagementRunView:
         approval_state=approval_state,
         audit_events=sorted(run.audit_events, key=lambda event: event.timestamp),
         traceability=run.review.traceability if run.review is not None else [],
+        chain_of_custody=ChainOfCustody(
+            mutation_sha=mutation_sha,
+            ci_sha=ci_sha,
+            approval_sha=approval_sha,
+            aligned=aligned,
+            state=custody_state,
+        ),
         created_at=run.created_at,
     )
 
