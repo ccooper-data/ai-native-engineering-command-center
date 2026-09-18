@@ -2,12 +2,21 @@ import json
 
 from .contracts import BenchmarkEvidence
 from .database import BenchmarkRecord, SessionLocal
-from .repository_evaluation import evaluate_repository_faults
+from .repository_evaluation import (
+    BENCHMARK_SCENARIO_IDS,
+    BENCHMARK_SPECIFICATION_VERSION,
+    evaluate_repository_faults,
+)
 
 
 def record_repository_benchmark(commit_sha: str) -> BenchmarkEvidence:
     metrics = evaluate_repository_faults()
-    evidence = BenchmarkEvidence(commit_sha=commit_sha, **metrics.model_dump())
+    evidence = BenchmarkEvidence(
+        commit_sha=commit_sha,
+        specification_version=BENCHMARK_SPECIFICATION_VERSION,
+        scenario_ids=BENCHMARK_SCENARIO_IDS,
+        **metrics.model_dump(),
+    )
     with SessionLocal() as session:
         session.add(
             BenchmarkRecord(
@@ -31,4 +40,6 @@ def detect_benchmark_regression(history: list[BenchmarkEvidence]) -> bool:
     if len(history) < 2:
         return False
     newest, previous = history[0], history[1]
+    if newest.specification_version != previous.specification_version or newest.scenario_ids != previous.scenario_ids:
+        return True
     return newest.detection_rate < previous.detection_rate or newest.blocking_rate < previous.blocking_rate
