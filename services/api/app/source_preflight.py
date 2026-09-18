@@ -1,4 +1,6 @@
 import ast
+import hashlib
+import json
 import shutil
 import subprocess
 import tempfile
@@ -39,8 +41,14 @@ def _ruff_check(path: str, content: str) -> SourcePreflightFinding:
 
 
 class SourcePreflightResult(BaseModel):
+    artifact_digest: str
     passed: bool
     findings: list[SourcePreflightFinding]
+
+
+def engineering_artifact_digest(artifact: EngineeringArtifact) -> str:
+    payload = json.dumps(artifact.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 def validate_source_preflight(artifact: EngineeringArtifact) -> SourcePreflightResult:
@@ -60,4 +68,4 @@ def validate_source_preflight(artifact: EngineeringArtifact) -> SourcePreflightR
         if suffix in {".ts", ".tsx"}:
             suspicious = "\\n" in change.content
             findings.append(SourcePreflightFinding(path=change.path, check="typescript-representation", passed=not suspicious, message="Literal escaped newline sequence detected." if suspicious else "Source representation check passed."))
-    return SourcePreflightResult(passed=all(item.passed for item in findings), findings=findings)
+    return SourcePreflightResult(artifact_digest=engineering_artifact_digest(artifact), passed=all(item.passed for item in findings), findings=findings)
