@@ -12,6 +12,13 @@ class Base(DeclarativeBase):
     pass
 
 
+class ConsumedAssertionRecord(Base):
+    __tablename__ = "consumed_identity_assertions"
+
+    assertion_id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), index=True)
+
+
 class BenchmarkRecord(Base):
     __tablename__ = "benchmark_runs"
 
