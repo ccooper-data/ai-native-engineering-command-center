@@ -1,4 +1,5 @@
 from app.contracts import (
+    ActorIdentity,
     ApprovalArtifact,
     CIValidationArtifact,
     ReviewArtifact,
@@ -22,7 +23,7 @@ def ready_run() -> WorkflowRun:
     )
     run.approval = ApprovalArtifact(
         approved=True,
-        approver="Human Reviewer",
+        approver=ActorIdentity(identity_id="human-reviewer", actor_type="human", authentication_source="github-oidc", role="workflow-approver"),
         rationale="Reviewed exact validated commit.",
         commit_sha=SHA,
     )
