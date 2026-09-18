@@ -5,9 +5,10 @@ from app.repository_tools import IsolatedBranchRepositoryExecutor, RepositoryPol
 
 
 class VerifyingClient:
-    def __init__(self, corrupt: bool = False) -> None:
+    def __init__(self, corrupt: bool = False, rollback_fails: bool = False) -> None:
         self.files: dict[str, str] = {}
         self.corrupt = corrupt
+        self.rollback_fails = rollback_fails
         self.starting_sha = "0" * 40
         self.reset_calls: list[str] = []
 
@@ -30,7 +31,8 @@ class VerifyingClient:
         return self.starting_sha if not self.files else "a" * 40
 
     def reset_branch_to_commit(self, branch_name: str, commit_sha: str) -> None:
-        self.files.clear()
+        if not self.rollback_fails:
+            self.files.clear()
         self.reset_calls.append(commit_sha)
 
 
@@ -69,3 +71,11 @@ def test_failed_source_preflight_performs_zero_repository_writes() -> None:
     with pytest.raises(RepositoryPolicyError, match="Source preflight failed"):
         IsolatedBranchRepositoryExecutor(client, "agent/verified-change").apply(bad)
     assert client.files == {}
+
+
+def test_failed_rollback_is_reported_as_critical_uncertain_state() -> None:
+    client = VerifyingClient(corrupt=True, rollback_fails=True)
+    with pytest.raises(RepositoryPolicyError, match="CRITICAL: rollback verification failed"):
+        IsolatedBranchRepositoryExecutor(client, "agent/verified-change").apply(artifact())
+    assert client.files != {}
+    assert client.reset_calls == ["0" * 40]
