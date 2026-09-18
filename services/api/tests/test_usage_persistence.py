@@ -65,4 +65,7 @@ def test_service_persists_planning_usage_metadata() -> None:
     assert run.planning_usage is not None
     assert run.planning_usage.response_id == "resp-123"
     assert run.planning_usage.total_tokens == 200
-    assert run.audit_events[-1].action == "record_model_usage"
+    assert any(
+        event.agent == "planning" and event.action == "record_model_usage"
+        for event in run.audit_events
+    )
