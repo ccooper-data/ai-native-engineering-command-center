@@ -6,12 +6,14 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .contracts import (
     ApprovalDecision,
+    BenchmarkEvidence,
     ManagementRunView,
     ManagementSummary,
     ProductRequest,
     WorkflowRun,
 )
 from .database import SqlRunRepository, create_schema
+from .benchmark_history import detect_benchmark_regression, list_repository_benchmarks
 from .management import build_management_summary, build_management_view
 from .repository_evaluation import RepositoryFaultMetrics, evaluate_repository_faults
 from .service import EngineeringWorkflowService
@@ -40,6 +42,16 @@ def get_run(run_id: UUID) -> WorkflowRun:
     run = repository.get(run_id)
     if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
     return run
+
+
+@app.get("/api/v1/management/control-effectiveness/history", response_model=list[BenchmarkEvidence])
+def get_control_effectiveness_history() -> list[BenchmarkEvidence]:
+    return list_repository_benchmarks()
+
+
+@app.get("/api/v1/management/control-effectiveness/regression")
+def get_control_effectiveness_regression() -> dict[str, bool]:
+    return {"regression": detect_benchmark_regression(list_repository_benchmarks())}
 
 
 @app.get("/api/v1/management/control-effectiveness", response_model=RepositoryFaultMetrics)
