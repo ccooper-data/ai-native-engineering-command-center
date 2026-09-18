@@ -169,7 +169,6 @@ class ActorIdentity(BaseModel):
 
 class ApprovalDecision(BaseModel):
     approved: bool
-    approver: ActorIdentity
     rationale: str = Field(min_length=3, max_length=2000)
 
 
@@ -201,7 +200,6 @@ class GovernanceEvidence(BaseModel):
 
 
 class IncidentResolution(BaseModel):
-    resolver: ActorIdentity
     rationale: str = Field(min_length=1)
     restored_commit_sha: str = Field(min_length=40, max_length=40)
     repository_state_verified: bool
