@@ -171,6 +171,39 @@ class MockArchitectureProvider(ArchitectureProvider):
         )
 
 
+class LLMEngineeringProvider(EngineeringProvider):
+    """Produces a bounded proposed change set; repository mutation remains separate."""
+
+    def __init__(self, llm: StructuredLLM) -> None:
+        self.llm = llm
+        self.name = llm.name
+        self.model = llm.model
+
+    def implement(
+        self,
+        product_request: str,
+        plan: PlanningArtifact,
+        architecture: ArchitectureArtifact,
+    ) -> EngineeringArtifact:
+        system = (
+            "You are the Engineering Agent in a governed software engineering system. "
+            "Produce a minimal, reviewable proposed repository change set from the approved "
+            "plan and architecture. You have no repository mutation, merge, deployment, or "
+            "approval authority. Never modify .github, CI workflows, secrets, credentials, "
+            "or protected configuration. Prefer small cohesive changes with executable tests."
+        )
+        prompt = (
+            "Create the EngineeringArtifact for the inputs below.\n\n"
+            f"PRODUCT REQUEST:\n{product_request}\n\n"
+            f"APPROVED PLAN:\n{plan.model_dump_json(indent=2)}\n\n"
+            f"APPROVED ARCHITECTURE:\n{architecture.model_dump_json(indent=2)}\n\n"
+            "Use an agent/ branch name. Limit the proposal to at most 6 files. Every create "
+            "or update must contain complete file content. Include tests and map the proposal "
+            "to acceptance-criterion IDs. Do not claim that files were written or tests ran."
+        )
+        return self.llm.generate(system=system, prompt=prompt, schema=EngineeringArtifact)
+
+
 class MockEngineeringProvider(EngineeringProvider):
     """Produces a bounded proposed change set; it has no repository-write authority."""
 
