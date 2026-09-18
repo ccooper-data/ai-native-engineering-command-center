@@ -6,10 +6,10 @@ from app.capabilities import evaluate_post_approval_capability
 from app.contracts import (
     ActorIdentity,
     ApprovalArtifact,
+    CIValidationArtifact,
     EngineeringArtifact,
     IncidentResolution,
     ProposedFileChange,
-    CIValidationArtifact,
     WorkflowRun,
 )
 from app.database import create_schema
