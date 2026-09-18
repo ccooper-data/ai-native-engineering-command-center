@@ -193,6 +193,14 @@ class GovernanceEvidence(BaseModel):
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class GovernanceException(BaseModel):
+    code: str
+    severity: str = Field(pattern="^(info|warning|high|critical)$")
+    message: str
+    workflow_id: UUID
+    evidence: list[str] = Field(default_factory=list)
+
+
 class ManagementSummary(BaseModel):
     total_workflows: int = Field(ge=0)
     active_workflows: int = Field(ge=0)
@@ -202,6 +210,7 @@ class ManagementSummary(BaseModel):
     review_failures: int = Field(ge=0)
     total_tokens: int = Field(ge=0)
     estimated_actual_cost_usd: float = Field(ge=0.0)
+    exceptions: list[GovernanceException] = Field(default_factory=list)
 
 
 class ManagementRunView(BaseModel):
