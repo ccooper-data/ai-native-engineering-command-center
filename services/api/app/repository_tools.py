@@ -142,8 +142,13 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
                 elif stored != change.content:
                     raise RepositoryPolicyError(f"Post-mutation content verification failed: {normalized}")
                 applied.append(normalized)
-        except Exception:
+        except Exception as mutation_error:
             self.client.reset_branch_to_commit(self.authorized_branch, starting_sha)
+            restored_sha = self.client.get_branch_commit_sha(self.authorized_branch)
+            if restored_sha != starting_sha:
+                raise RepositoryPolicyError(
+                    "CRITICAL: rollback verification failed; isolated branch state is uncertain"
+                ) from mutation_error
             raise
         commit_sha = self.client.get_branch_commit_sha(self.authorized_branch)
         if len(commit_sha) != 40:
