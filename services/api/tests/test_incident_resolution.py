@@ -48,7 +48,7 @@ def incident_run() -> WorkflowRun:
 def test_verified_human_resolution_invalidates_preincident_evidence() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
-    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="test-auth", role="incident-resolver"), rationale="Repository inspected and restored.", restored_commit_sha=SHA, repository_state_verified=True)
+    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="github-oidc", role="incident-resolver"), rationale="Repository inspected and restored.", restored_commit_sha=SHA, repository_state_verified=True)
     updated = service.resolve_repository_incident(run.id, resolution, SHA)
     assert updated.repository_incident.resolved is True
     assert updated.verified_mutation_commit_sha is None
@@ -61,7 +61,7 @@ def test_verified_human_resolution_invalidates_preincident_evidence() -> None:
 def test_resolution_rejects_unverified_repository_state() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
-    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="test-auth", role="incident-resolver"), rationale="Not verified.", restored_commit_sha=SHA, repository_state_verified=False)
+    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="github-oidc", role="incident-resolver"), rationale="Not verified.", restored_commit_sha=SHA, repository_state_verified=False)
     with pytest.raises(ValueError, match="verified repository state"):
         service.resolve_repository_incident(run.id, resolution, SHA)
 
@@ -69,7 +69,7 @@ def test_resolution_rejects_unverified_repository_state() -> None:
 def test_resolution_rejects_sha_mismatch() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
-    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="test-auth", role="incident-resolver"), rationale="Checked.", restored_commit_sha=SHA, repository_state_verified=True)
+    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="github-oidc", role="incident-resolver"), rationale="Checked.", restored_commit_sha=SHA, repository_state_verified=True)
     with pytest.raises(ValueError, match="currently observed"):
         service.resolve_repository_incident(run.id, resolution, "b" * 40)
 
