@@ -14,7 +14,7 @@ from app.contracts import (
 )
 from app.database import create_schema
 from app.identity import (
-    AssertionReplayGuard,
+    InMemoryAssertionReplayGuard,
     AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
@@ -87,7 +87,7 @@ def test_context_replay_and_preflight_staleness_fail_closed() -> None:
             workflow_id="workflow-b",
             commit_sha=SHA,
         )
-    guard = AssertionReplayGuard()
+    guard = InMemoryAssertionReplayGuard()
     guard.consume(assertion)
     with pytest.raises(IdentityPolicyError, match="already been consumed"):
         guard.consume(assertion)
