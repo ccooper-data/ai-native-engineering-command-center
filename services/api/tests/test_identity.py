@@ -1,6 +1,11 @@
 import pytest
 
-from app.identity import IdentityAssertion, IdentityPolicyError, actor_from_verified_assertion, require_capability
+from app.identity import (
+    IdentityAssertion,
+    IdentityPolicyError,
+    actor_from_verified_assertion,
+    require_capability,
+)
 
 
 def test_verified_github_human_identity_is_accepted() -> None:
