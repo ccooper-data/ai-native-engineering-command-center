@@ -1,9 +1,8 @@
-from datetime import UTC, datetime
 from typing import Protocol
 
 from fastapi import Header, HTTPException, status
 
-from .identity import AuthorizationContext, IdentityAssertion, VerificationProvenance
+from .identity import IdentityAssertion
 
 
 class RequestIdentityVerifier(Protocol):
