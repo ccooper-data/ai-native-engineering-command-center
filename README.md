@@ -1,12 +1,44 @@
 # AI-Native Engineering Command Center
 
-A production-oriented multi-agent software engineering platform that transforms an ambiguous product request into structured requirements, architecture decisions, implementation, testing, security review, human approval, and deployment.
+A governed, auditable multi-agent software-engineering platform for turning ambiguous product requests into structured planning, architecture, implementation artifacts, quality/security evidence, controlled repository changes, human decisions, and draft pull-request evidence.
 
-## Vision
+This project is intentionally different from an “agents talking to agents” demo. LLM reasoning is separated from repository authority, consequential actions are fail-closed, and progression depends on evidence tied to immutable commit identity.
 
-The Command Center is designed to demonstrate bounded autonomous engineering rather than simulated agent conversations. Agents operate against shared workflow state, use explicitly authorized tools, produce auditable artifacts, and cannot bypass deterministic quality or human-approval gates.
+## What is implemented
 
-## Target workflow
+### Multi-agent engineering
+- Planning, Architecture, and Engineering responsibilities with schema-enforced artifacts.
+- LangGraph orchestration and provider-independent OpenAI / Anthropic / deterministic mock abstractions.
+- QA, Security, independent Review, remediation, requirements-to-implementation traceability, and model usage/cost accounting.
+- FastAPI/Python backend and Next.js/TypeScript Command Center.
+
+### Governed repository mutation
+- Zero-mutation repository dry runs and bounded change-set policy.
+- Isolated `agent/*` branch mutation; protected paths and branch aliases fail closed.
+- Python AST and Ruff-aware source preflight before governed mutation.
+- Digest-bound preflight evidence: changed source invalidates stale validation.
+- Post-write content verification and immutable mutation commit-SHA capture.
+- Rollback after mutation failure and independent rollback verification.
+- Failed rollback becomes a critical repository incident rather than ordinary remediation.
+
+### Human authority and identity
+- Structured actor identities rather than display-name authorization.
+- Separation of authentication, identity policy, role/capability authorization, and sensitive action execution.
+- Trusted issuer, audience, issuance/expiry, authentication-source, and role checks.
+- Sensitive approval and incident recovery are human-only capabilities.
+- Assertions are bound to exact capability + workflow + commit SHA.
+- SQL-backed atomic assertion consumption prevents replay across service instances.
+- Mutation actor cannot independently certify recovery of its own critical incident.
+
+### Evidence and progression
+- Source-preflight evidence and audit events.
+- Verified mutation SHA, executable CI evidence, independent review, and human approval form a chain of custody.
+- Stale or mismatched mutation/CI/approval identities block progression.
+- Human approval permits generation of a governed **draft PR** only.
+- Merge and deployment authority remain explicitly separate and are not granted by approval.
+- Critical incident recovery invalidates pre-incident mutation, CI, review, and approval trust so fresh evidence must be established.
+
+## Governed workflow
 
 ```text
 Product Request
@@ -17,103 +49,163 @@ Architecture Agent
       |
 Engineering Agent
       |
-+-----+------+
-|            |
-QA Agent  Security Agent
-|            |
-+-----+------+
+Source Preflight ----> BLOCK on deterministic failure
       |
-Remediation Gate <---- failed checks
+Repository Dry Run
       |
-Reviewer Agent
+Bounded Isolated Mutation
       |
-Acceptance Criteria Gate
+Post-write Verification
+      | failure
+      +----> Rollback ----> verify rollback
+                              | failure
+                              v
+                     CRITICAL REPOSITORY INCIDENT
+                              |
+                    independent human recovery
+                              |
+                    prior trust evidence cleared
       |
-HUMAN APPROVAL
+Executable CI
       |
-Merge / Deployment
+QA / Security / Review
       |
-Post-deployment Verification
+Acceptance-Criteria / Evidence Gates
+      |
+Authenticated HUMAN APPROVAL
+      |
+Governed Draft PR
+      |
+Merge / Deployment remain separate authorities
 ```
 
-## Planned stack
+## Trust model
 
-- Frontend: Next.js + TypeScript
-- Backend: FastAPI + Python
-- Agent orchestration: LangGraph
-- Database: PostgreSQL + pgvector
-- Workflow/cache state: Redis
-- LLMs: provider-independent gateway (OpenAI / Anthropic / mock provider)
-- Containers: Docker
-- Infrastructure: AWS + Terraform
-- CI/CD: GitHub Actions
-- Observability: OpenTelemetry
-- Testing: pytest + frontend tests
-- Security: Semgrep, Gitleaks, dependency/container scanning
-- API: REST + OpenAPI contracts
+The Command Center does not treat model output as authority.
 
-## Engineering principles
+```text
+LLM reasoning
+   != repository authority
+   != human identity
+   != approval authority
+   != merge authority
+   != deployment authority
+```
 
-1. Agents receive least-privilege tool access.
-2. Consequential actions require deterministic gates and/or human approval.
-3. Every agent run, tool call, artifact, test result, security finding, approval, and deployment is auditable.
-4. Failed QA or security checks route work back for remediation rather than being ignored.
-5. Workflow cost, retries, and model usage are budgeted and observable.
-6. LLM providers are replaceable; orchestration is not coupled to one model vendor.
-7. Evaluation uses objective outcomes where possible, including executable tests.
+Sensitive human actions follow a separate trust chain:
 
-## Evaluation strategy
+```text
+Bearer credential
+  -> cryptographic verifier boundary
+  -> verified claims / provenance
+  -> trusted ActorIdentity
+  -> role + human capability
+  -> exact workflow/SHA authorization context
+  -> atomic one-time assertion consumption
+  -> governed action
+```
 
-The project will use three complementary evaluation layers:
+The repository currently provides the verifier **interface/boundary** and a fail-closed API default. A production external OIDC/SSO cryptographic verifier is intentionally not faked in this repository.
 
-- **SWE-bench Verified subset** for real-world software-engineering tasks with executable ground truth.
-- **Command Center Product Benchmark** for ambiguous product requests that test planning, requirements, architecture, and traceability.
-- **Security Fault Injection Benchmark** for controlled vulnerabilities and unsafe changes that should be detected and blocked.
+## Failure model
 
-## Runtime model selection
+Important failures are explicit state transitions, not exceptions that disappear into logs.
 
-The default runtime remains deterministic and does not require paid model access:
+- Failed source preflight: zero repository writes.
+- Stored content differs from intended content: mutation fails and rollback is attempted.
+- Verified rollback succeeds: controlled remediation can proceed.
+- Rollback cannot be verified: critical uncertain repository state; progression stops.
+- Critical recovery requires an independently authorized human and exact restored SHA.
+- CI failure, review failure, identity mismatch, stale approval, or governance-control regression blocks readiness.
+- A recovered incident never resurrects stale approval or CI evidence.
+
+## Adversarial regression evidence
+
+The test suite deliberately attacks governance boundaries, including:
+
+- service identity attempting a human-only approval capability;
+- wrong role/capability;
+- wrong workflow authorization context;
+- stale commit SHA;
+- replayed authentication assertion;
+- source modified after preflight;
+- corrupted repository write;
+- failed rollback and uncertain repository state;
+- self-resolution / authority separation;
+- stale CI or approval evidence;
+- attempted merge/deployment authority escalation;
+- corruption -> failed rollback -> durable incident -> independently authenticated recovery -> trust invalidation.
+
+These tests complement normal unit/integration tests and are intended to detect control regression as the architecture evolves.
+
+## Technology
+
+| Layer | Implementation |
+| --- | --- |
+| Backend | FastAPI, Python, Pydantic |
+| Frontend | Next.js, TypeScript |
+| Orchestration | LangGraph |
+| LLM abstraction | OpenAI, Anthropic, deterministic mock providers |
+| Persistence | SQLAlchemy; PostgreSQL-oriented architecture with local SQLite test support |
+| Repository governance | bounded executor, source preflight, digest binding, post-write verification, rollback |
+| CI/CD | GitHub Actions |
+| Security | Gitleaks, Semgrep |
+| Infrastructure direction | AWS, Terraform, Docker |
+| Observability direction | OpenTelemetry |
+| Testing | pytest, frontend type/build checks, adversarial governance regression |
+
+## CI gates
+
+The repository's CI independently validates three major surfaces:
+
+1. **Backend** — Ruff plus pytest.
+2. **Frontend** — TypeScript checking plus production build.
+3. **Security** — Gitleaks plus Semgrep.
+
+Application preflight is intentionally not a replacement for CI. It moves deterministic feedback earlier; CI remains independent evidence.
+
+## Model-provider operation
+
+Deterministic development does not require paid model access:
 
 ```bash
 COMMAND_CENTER_LLM_PROVIDER=mock
 ```
 
-A controlled live Planning Agent can be enabled with either provider. API credentials must be supplied through the local/runtime environment and must never be committed to the repository.
+Controlled real-model workflows can use configured OpenAI or Anthropic providers through the same abstraction. Credentials belong in runtime environment/secrets and must never be committed.
 
-OpenAI:
+## Management Command Center
 
-```bash
-export COMMAND_CENTER_LLM_PROVIDER=openai
-export COMMAND_CENTER_OPENAI_API_KEY='<set-locally>'
-export COMMAND_CENTER_OPENAI_MODEL='<supported-model-id>'
-```
+The management surface exposes workflow state, traceability, audit events, CI/review/approval status, chain-of-custody identity, governance readiness, and critical repository incidents.
 
-Anthropic:
+Readiness is fail-closed. A workflow can reach `READY_FOR_DRAFT_PR` only when required mutation, CI, review, identity, and human-approval evidence are aligned.
 
-```bash
-export COMMAND_CENTER_LLM_PROVIDER=anthropic
-export COMMAND_CENTER_ANTHROPIC_API_KEY='<set-locally>'
-export COMMAND_CENTER_ANTHROPIC_MODEL='<supported-model-id>'
-```
+## Repository design principles
 
-For the first live validation, only the Planning Agent should use a paid provider. Architecture, Engineering, QA, and Security remain controlled providers so the test has a bounded cost and a small failure surface.
+1. **Evidence before authority.**
+2. **LLM reasoning is not repository permission.**
+3. **Human identity is authenticated, not self-declared.**
+4. **Authorization is capability-specific and least privilege.**
+5. **Immutable commit identity binds mutation, CI, and approval.**
+6. **Recovery does not restore stale trust.**
+7. **Security controls fail closed.**
+8. **CI remains independent of application claims.**
+9. **Adversarial tests validate control composition, not only happy paths.**
+10. **Merge and deployment remain separate human-controlled authorities.**
 
-### First live request
+## Current status
 
-Use the benchmark product request:
+**Governed engineering core: implemented and under final convergence/release review.**
 
-> Add customer churn forecasting to our SaaS product and expose the results through the mobile app.
+The remaining work is primarily portfolio/release convergence: final architecture review, documentation/evidence polish, release-baseline validation, and clearly separating implemented behavior from future production integrations.
 
-The expected output is a schema-validated PlanningArtifact with explicit assumptions, requirements, dependencies, risks, implementation tasks, and testable acceptance criteria. A live Planning Agent has no repository-write, merge, deployment, or approval authority.
+## Scope boundaries / future production integrations
 
-## Milestone 1
+The repository deliberately does not claim production capabilities it does not yet implement. Future integrations include:
 
-Build the first real vertical slice:
+- a concrete external GitHub OIDC / enterprise SSO cryptographic verifier;
+- production deployment authority and post-deployment verification;
+- production-grade distributed infrastructure/observability deployment;
+- operational key rotation, identity lifecycle, and environment-specific authorization policy.
 
-> Product request -> Planning Agent -> structured requirements and acceptance criteria -> persisted workflow state -> API -> Command Center UI.
-
-The first milestone supports deterministic development plus opt-in real OpenAI or Anthropic planning through the same provider-independent contract.
-
-## Status
-
-**Phase 1: Governed real-agent integration — in progress**
+Those integrations can plug into the existing trust boundaries without granting additional authority to LLM agents.
