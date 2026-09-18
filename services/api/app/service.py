@@ -330,6 +330,7 @@ class EngineeringWorkflowService:
             raise ValueError("Successful executable CI evidence is required before human approval")
         if run.ci_validation.commit_sha != expected_commit_sha:
             raise ValueError("Human approval must target the current validated commit SHA")
+        require_human_capability(decision.approver, "approve-workflow")
         run.approval = ApprovalArtifact(
             approved=decision.approved,
             approver=decision.approver,
