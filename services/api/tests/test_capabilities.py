@@ -9,7 +9,7 @@ def approved_run() -> WorkflowRun:
     run.ci_validation = CIValidationArtifact(run_id=151, commit_sha=SHA, passed=True, jobs=[])
     run.approval = ApprovalArtifact(
         approved=True,
-        approver="Human Reviewer",
+        approver=ActorIdentity(identity_id="human-reviewer", actor_type="human", authentication_source="github-oidc", role="workflow-approver"),
         rationale="Reviewed exact validated commit.",
         commit_sha=SHA,
     )
