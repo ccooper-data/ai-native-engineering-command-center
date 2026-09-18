@@ -239,6 +239,7 @@ class WorkflowRun(BaseModel):
     engineering: EngineeringArtifact | None = None
     engineering_usage: ModelUsageArtifact | None = None
     repository_dry_run: RepositoryDryRunArtifact | None = None
+    verified_mutation_commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
