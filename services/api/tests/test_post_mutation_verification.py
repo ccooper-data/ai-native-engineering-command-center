@@ -24,6 +24,9 @@ class VerifyingClient:
     def read_file(self, branch_name: str, path: str) -> str | None:
         return self.files.get(path)
 
+    def get_branch_commit_sha(self, branch_name: str) -> str:
+        return "a" * 40
+
 
 def artifact() -> EngineeringArtifact:
     return EngineeringArtifact(
@@ -41,6 +44,7 @@ def test_isolated_executor_verifies_stored_content_after_write() -> None:
     result = IsolatedBranchRepositoryExecutor(VerifyingClient(), "agent/verified-change").apply(artifact())
     assert result.verification_performed is True
     assert result.verified_paths == ["src/proof.py"]
+    assert result.commit_sha == "a" * 40
 
 
 def test_isolated_executor_fails_closed_when_stored_content_differs() -> None:
