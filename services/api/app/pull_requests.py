@@ -31,6 +31,10 @@ def build_pull_request_draft(
         raise ValueError("Pull request publication requires successful executable CI evidence")
     if run.approval.commit_sha != run.ci_validation.commit_sha:
         raise ValueError("Human approval is stale for the validated commit SHA")
+    if run.verified_mutation_commit_sha is None:
+        raise ValueError("Pull request publication requires verified mutation commit evidence")
+    if not (run.verified_mutation_commit_sha == run.ci_validation.commit_sha == run.approval.commit_sha):
+        raise ValueError("Mutation, CI, and human approval commit SHAs must be identical")
     if execution.dry_run:
         raise ValueError("Cannot publish a pull request for a dry-run repository execution")
     if execution.branch_name != run.engineering.branch_name:
