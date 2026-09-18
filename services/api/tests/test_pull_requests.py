@@ -1,4 +1,10 @@
-from app.contracts import ApprovalArtifact, CIJobEvidence, CIValidationArtifact, ProductRequest
+from app.contracts import (
+    ActorIdentity,
+    ApprovalArtifact,
+    CIJobEvidence,
+    CIValidationArtifact,
+    ProductRequest,
+)
 from app.database import SqlRunRepository, create_schema
 from app.pull_requests import build_pull_request_draft
 from app.repository_tools import RepositoryExecutionResult
@@ -24,7 +30,7 @@ def approved_run():
     )
     run.approval = ApprovalArtifact(
         approved=True,
-        approver="Cory Cooper",
+        approver=ActorIdentity(identity_id="github:user:approver", actor_type="human", authentication_source="github-oidc", role="workflow-approver"),
         rationale="Reviewed quality, security, and traceability evidence.",
         commit_sha="a" * 40,
     )
