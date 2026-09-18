@@ -66,3 +66,8 @@ class SqlRunRepository:
             if record is None:
                 return None
             return WorkflowRun.model_validate(json.loads(record.payload))
+
+    def list(self) -> list[WorkflowRun]:
+        with SessionLocal() as session:
+            records = session.query(WorkflowRunRecord).order_by(WorkflowRunRecord.created_at.desc()).all()
+            return [WorkflowRun.model_validate(json.loads(record.payload)) for record in records]
