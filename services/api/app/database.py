@@ -12,6 +12,15 @@ class Base(DeclarativeBase):
     pass
 
 
+class BenchmarkRecord(Base):
+    __tablename__ = "benchmark_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    commit_sha: Mapped[str] = mapped_column(String(40), index=True)
+    payload: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True))
+
+
 class WorkflowRunRecord(Base):
     __tablename__ = "workflow_runs"
 
