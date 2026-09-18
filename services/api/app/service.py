@@ -1,6 +1,7 @@
 from typing import Protocol
 from uuid import UUID
 
+from .authorization import authorize_sensitive_action
 from .config import Settings, settings
 from .contracts import (
     ActorIdentity,
@@ -17,7 +18,6 @@ from .contracts import (
     WorkflowRun,
 )
 from .graph import build_engineering_graph
-from .authorization import authorize_sensitive_action
 from .identity import IdentityAssertion
 from .llm import build_structured_llm
 from .preflight import RunCostBudget
