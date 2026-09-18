@@ -28,7 +28,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
         assert run["approval"] is None
 
         blocked = client.post(
-            f'/api/v1/runs/{run["id"]}/approval',
+            f'/api/v1/runs/{run["id"]}/approval?commit_sha={"0" * 40}',
             json={
                 "approved": True,
                 "approver": "Cory Cooper",
@@ -39,7 +39,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
 
         validation = CIValidationArtifact(
             run_id=123,
-            commit_sha="abc123",
+            commit_sha="a" * 40,
             passed=True,
             jobs=[
                 CIJobEvidence(name="backend", conclusion="success", passed=True),
@@ -50,14 +50,24 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
         persisted = workflow_service.record_ci_validation(
             run_id=UUID(run["id"]),
             validation=validation,
-            expected_commit_sha="abc123",
+            expected_commit_sha="a" * 40,
         )
         assert persisted is not None
         assert persisted.ci_validation is not None
         assert persisted.ci_validation.passed is True
 
+        stale = client.post(
+            f'/api/v1/runs/{run["id"]}/approval?commit_sha={"b" * 40}',
+            json={
+                "approved": True,
+                "approver": "Cory Cooper",
+                "rationale": "Attempt approval against stale commit.",
+            },
+        )
+        assert stale.status_code == 409
+
         approval = client.post(
-            f'/api/v1/runs/{run["id"]}/approval',
+            f'/api/v1/runs/{run["id"]}/approval?commit_sha={"a" * 40}',
             json={
                 "approved": True,
                 "approver": "Cory Cooper",
@@ -69,6 +79,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
         assert approved["status"] == "approved"
         assert approved["approval"]["approved"] is True
         assert approved["approval"]["approver"] == "Cory Cooper"
+        assert approved["approval"]["commit_sha"] == "a" * 40
         assert approved["audit_events"][-1]["agent"] == "human"
 
 
