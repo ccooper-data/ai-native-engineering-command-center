@@ -15,6 +15,8 @@ class VerifiedTokenClaims(Protocol):
     @property
     def audience(self) -> str: ...
     @property
+    def assertion_id(self) -> str: ...
+    @property
     def issued_at(self): ...
     @property
     def expires_at(self): ...
@@ -49,6 +51,7 @@ def assertion_from_verified_token(
             issuer=claims.issuer,
             audience=claims.audience,
             verification_method="cryptographic-token-verifier",
+            assertion_id=claims.assertion_id,
             issued_at=claims.issued_at,
             expires_at=claims.expires_at,
         ),
