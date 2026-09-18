@@ -1,6 +1,16 @@
+from datetime import UTC, datetime
+
 from pydantic import BaseModel, Field
 
 from .contracts import ActorIdentity
+
+
+class VerificationProvenance(BaseModel):
+    issuer: str = Field(min_length=1)
+    audience: str = Field(min_length=1)
+    verification_method: str = Field(min_length=1)
+    issued_at: datetime
+    expires_at: datetime
 
 
 class IdentityAssertion(BaseModel):
@@ -8,7 +18,7 @@ class IdentityAssertion(BaseModel):
     actor_type: str = Field(pattern="^(human|service|agent)$")
     authentication_source: str = Field(min_length=1)
     role: str = Field(min_length=1)
-    verified: bool
+    verification: VerificationProvenance
 
 
 class IdentityPolicyError(ValueError):
@@ -20,8 +30,15 @@ TRUSTED_HUMAN_AUTH_SOURCES = {"github-oidc", "enterprise-sso"}
 
 def actor_from_verified_assertion(assertion: IdentityAssertion) -> ActorIdentity:
     """Construct authority-bearing identity only from a verified trusted assertion."""
-    if not assertion.verified:
-        raise IdentityPolicyError("Identity assertion is not verified")
+    now = datetime.now(UTC)
+    if assertion.verification.expires_at <= now:
+        raise IdentityPolicyError("Identity assertion has expired")
+    if assertion.verification.issued_at > now:
+        raise IdentityPolicyError("Identity assertion was issued in the future")
+    if assertion.verification.issuer not in {"https://token.actions.githubusercontent.com", "enterprise-sso"}:
+        raise IdentityPolicyError("Identity assertion issuer is not trusted")
+    if assertion.verification.audience != "ai-native-engineering-command-center":
+        raise IdentityPolicyError("Identity assertion audience is invalid")
     if assertion.actor_type == "human" and assertion.authentication_source not in TRUSTED_HUMAN_AUTH_SOURCES:
         raise IdentityPolicyError("Human identity requires a trusted authentication source")
     return ActorIdentity(
