@@ -42,6 +42,9 @@ def test_token_must_pass_verifier_before_identity_policy() -> None:
         actor_type="human",
         authentication_source="github-oidc",
         role="workflow-approver",
+        capability="approve-workflow",
+        workflow_id="workflow-123",
+        commit_sha="a" * 40,
     )
     actor = actor_from_verified_assertion(assertion)
     assert verifier.tokens == ["signed-token"]
