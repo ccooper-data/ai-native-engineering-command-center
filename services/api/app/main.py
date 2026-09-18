@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from .api_identity import verified_approval_assertion
 from .benchmark_history import detect_benchmark_regression, list_repository_benchmarks
 from .contracts import (
     ApprovalDecision,
@@ -13,6 +14,7 @@ from .contracts import (
     ProductRequest,
     WorkflowRun,
 )
+from .identity import IdentityAssertion
 from .database import SqlRunRepository, create_schema
 from .management import build_management_summary, build_management_view
 from .repository_evaluation import RepositoryFaultMetrics, evaluate_repository_faults
@@ -72,8 +74,13 @@ def get_management_run(run_id: UUID) -> ManagementRunView:
 
 
 @app.post("/api/v1/runs/{run_id}/approval", response_model=WorkflowRun)
-def approve_run(run_id: UUID, decision: ApprovalDecision, commit_sha: str) -> WorkflowRun:
-    try: run = workflow_service.record_human_approval(run_id, decision, commit_sha)
+def approve_run(
+    run_id: UUID,
+    decision: ApprovalDecision,
+    commit_sha: str,
+    assertion: IdentityAssertion = Depends(verified_approval_assertion),
+) -> WorkflowRun:
+    try: run = workflow_service.record_human_approval(run_id, decision, assertion, commit_sha)
     except ValueError as exc: raise HTTPException(status_code=409, detail=str(exc)) from exc
     if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
     return run
