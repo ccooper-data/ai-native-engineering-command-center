@@ -10,6 +10,7 @@ from .contracts import (
     ModelUsageArtifact,
     ProductRequest,
     RepositoryDryRunArtifact,
+    RepositoryIncident,
     RunStatus,
     WorkflowRun,
 )
@@ -26,7 +27,7 @@ from .providers import (
     PlanningProvider,
 )
 from .quality import MockQAProvider, MockSecurityProvider
-from .repository_tools import DryRunRepositoryExecutor, RepositoryPolicyError
+from .repository_tools import DryRunRepositoryExecutor, RepositoryExecutionResult, RepositoryExecutor, RepositoryPolicyError
 
 
 class RunRepository(Protocol):
@@ -207,6 +208,44 @@ class EngineeringWorkflowService:
                     status="success",
                 )
             )
+        return self.repository.save(run)
+
+
+    def execute_verified_mutation(
+        self,
+        run_id: UUID,
+        executor: RepositoryExecutor,
+    ) -> WorkflowRun | None:
+        run = self.repository.get(run_id)
+        if run is None:
+            return None
+        if run.engineering is None:
+            raise ValueError("Engineering artifact is required before repository mutation")
+        try:
+            result: RepositoryExecutionResult = executor.apply(run.engineering)
+        except RepositoryPolicyError as exc:
+            message = str(exc)
+            if message.startswith("CRITICAL: rollback verification failed"):
+                branch_name = getattr(executor, "authorized_branch", run.engineering.branch_name)
+                client = getattr(executor, "client", None)
+                observed_sha = client.get_branch_commit_sha(branch_name) if client is not None else "0" * 40
+                starting_sha = getattr(client, "starting_sha", None) or "0" * 40
+                run.repository_incident = RepositoryIncident(
+                    severity="critical",
+                    category="rollback_verification_failed",
+                    message=message,
+                    branch_name=branch_name,
+                    starting_commit_sha=starting_sha,
+                    observed_commit_sha=observed_sha,
+                )
+                run.audit_events.append(AuditEvent(agent="repository", action="rollback_verification", status="critical", commit_sha=observed_sha))
+                run.status = RunStatus.FAILED
+                self.repository.save(run)
+            raise
+        if result.commit_sha is None:
+            raise ValueError("Verified mutation must return immutable commit SHA evidence")
+        run.verified_mutation_commit_sha = result.commit_sha
+        run.audit_events.append(AuditEvent(agent="repository", action="verified_mutation", status="success", commit_sha=result.commit_sha, evidence_refs=result.verified_paths))
         return self.repository.save(run)
 
     def record_ci_validation(
