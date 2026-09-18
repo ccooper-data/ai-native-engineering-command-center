@@ -5,7 +5,11 @@ from typing import Protocol
 from pydantic import BaseModel
 
 from .contracts import EngineeringArtifact, ProposedFileChange
-from .source_preflight import SourcePreflightResult, engineering_artifact_digest, validate_source_preflight
+from .source_preflight import (
+    SourcePreflightResult,
+    engineering_artifact_digest,
+    validate_source_preflight,
+)
 
 
 class RepositoryPolicyError(ValueError):
