@@ -9,6 +9,7 @@ from .contracts import (
     CIValidationArtifact,
     ModelUsageArtifact,
     ProductRequest,
+    RepositoryDryRunArtifact,
     RunStatus,
     WorkflowRun,
 )
@@ -25,6 +26,7 @@ from .providers import (
     PlanningProvider,
 )
 from .quality import MockQAProvider, MockSecurityProvider
+from .repository_tools import DryRunRepositoryExecutor, RepositoryPolicyError
 
 
 class RunRepository(Protocol):
@@ -130,6 +132,40 @@ class EngineeringWorkflowService:
             run.audit_events.append(
                 AuditEvent(agent="planning", action="record_model_usage", status="success")
             )
+        if run.engineering is not None:
+            try:
+                dry_run = DryRunRepositoryExecutor().apply(run.engineering)
+                run.repository_dry_run = RepositoryDryRunArtifact(
+                    passed=True,
+                    branch_name=dry_run.branch_name,
+                    proposed_paths=dry_run.applied_paths,
+                    commit_message=dry_run.commit_message,
+                    mutation_performed=False,
+                )
+                run.audit_events.append(
+                    AuditEvent(
+                        agent="repository-policy",
+                        action="engineering_dry_run",
+                        status="success",
+                    )
+                )
+            except RepositoryPolicyError:
+                run.repository_dry_run = RepositoryDryRunArtifact(
+                    passed=False,
+                    branch_name=run.engineering.branch_name,
+                    proposed_paths=[change.path for change in run.engineering.files],
+                    commit_message=run.engineering.commit_message,
+                    mutation_performed=False,
+                )
+                run.audit_events.append(
+                    AuditEvent(
+                        agent="repository-policy",
+                        action="engineering_dry_run",
+                        status="blocked",
+                    )
+                )
+                run.status = RunStatus.REMEDIATION_REQUIRED
+
         engineering_llm = getattr(self.engineering_provider, "llm", None)
         engineering_generation = getattr(engineering_llm, "last_generation", None)
         if engineering_generation is not None:
