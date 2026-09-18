@@ -1,6 +1,7 @@
 import pytest
 
 from app.contracts import (
+    ActorIdentity,
     ApprovalArtifact,
     CIValidationArtifact,
     IncidentResolution,
@@ -35,7 +36,7 @@ def incident_run() -> WorkflowRun:
         branch_name="agent/test",
         starting_commit_sha="0" * 40,
         observed_commit_sha=SHA,
-        mutation_actor="repository-executor",
+        mutation_actor=ActorIdentity(identity_id="repository-executor", actor_type="service", authentication_source="internal-capability", role="repository-mutation"),
     )
     run.verified_mutation_commit_sha = SHA
     run.ci_validation = CIValidationArtifact(run_id=1, commit_sha=SHA, passed=True, jobs=[])
@@ -47,7 +48,7 @@ def incident_run() -> WorkflowRun:
 def test_verified_human_resolution_invalidates_preincident_evidence() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
-    resolution = IncidentResolution(resolver="Human Operator", rationale="Repository inspected and restored.", restored_commit_sha=SHA, repository_state_verified=True)
+    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="test-auth", role="incident-resolver"), rationale="Repository inspected and restored.", restored_commit_sha=SHA, repository_state_verified=True)
     updated = service.resolve_repository_incident(run.id, resolution, SHA)
     assert updated.repository_incident.resolved is True
     assert updated.verified_mutation_commit_sha is None
@@ -60,7 +61,7 @@ def test_verified_human_resolution_invalidates_preincident_evidence() -> None:
 def test_resolution_rejects_unverified_repository_state() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
-    resolution = IncidentResolution(resolver="Human Operator", rationale="Not verified.", restored_commit_sha=SHA, repository_state_verified=False)
+    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="test-auth", role="incident-resolver"), rationale="Not verified.", restored_commit_sha=SHA, repository_state_verified=False)
     with pytest.raises(ValueError, match="verified repository state"):
         service.resolve_repository_incident(run.id, resolution, SHA)
 
@@ -68,7 +69,7 @@ def test_resolution_rejects_unverified_repository_state() -> None:
 def test_resolution_rejects_sha_mismatch() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
-    resolution = IncidentResolution(resolver="Human Operator", rationale="Checked.", restored_commit_sha=SHA, repository_state_verified=True)
+    resolution = IncidentResolution(resolver=ActorIdentity(identity_id="human-operator", actor_type="human", authentication_source="test-auth", role="incident-resolver"), rationale="Checked.", restored_commit_sha=SHA, repository_state_verified=True)
     with pytest.raises(ValueError, match="currently observed"):
         service.resolve_repository_incident(run.id, resolution, "b" * 40)
 
@@ -77,7 +78,7 @@ def test_incident_actor_cannot_self_resolve_critical_incident() -> None:
     run = incident_run()
     service = EngineeringWorkflowService(MemoryRepository(run))
     resolution = IncidentResolution(
-        resolver="repository-executor",
+        resolver=ActorIdentity(identity_id="repository-executor", actor_type="service", authentication_source="internal-capability", role="repository-mutation"),
         rationale="Self-resolution must not be sufficient.",
         restored_commit_sha=SHA,
         repository_state_verified=True,
