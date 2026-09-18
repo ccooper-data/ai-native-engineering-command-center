@@ -29,7 +29,10 @@ def build_management_view(run: WorkflowRun, control_regression: bool = False) ->
     else:
         custody_state = "aligned"
     reasons: list[str] = []
-    if run.verified_mutation_commit_sha is None:
+    if run.repository_incident is not None and not run.repository_incident.resolved:
+        readiness_state = "BLOCKED"
+        reasons.append("Critical repository incident requires explicit human intervention.")
+    elif run.verified_mutation_commit_sha is None:
         readiness_state = "VALIDATING"
         reasons.append("Verified repository mutation evidence is pending.")
     elif run.ci_validation is None:
@@ -69,6 +72,7 @@ def build_management_view(run: WorkflowRun, control_regression: bool = False) ->
         audit_events=sorted(run.audit_events, key=lambda event: event.timestamp),
         traceability=run.review.traceability if run.review is not None else [],
         readiness=GovernanceReadiness(state=readiness_state, reasons=reasons),
+        repository_incident=run.repository_incident,
         chain_of_custody=ChainOfCustody(
             mutation_sha=mutation_sha,
             ci_sha=ci_sha,
@@ -83,6 +87,8 @@ def build_management_view(run: WorkflowRun, control_regression: bool = False) ->
 def build_management_summary(runs: list[WorkflowRun]) -> ManagementSummary:
     exceptions: list[GovernanceException] = []
     for run in runs:
+        if run.repository_incident is not None and not run.repository_incident.resolved:
+            exceptions.append(GovernanceException(code="REPOSITORY_STATE_UNCERTAIN", severity="critical", message=run.repository_incident.message, workflow_id=run.id, evidence=[run.repository_incident.branch_name, run.repository_incident.starting_commit_sha, run.repository_incident.observed_commit_sha]))
         if run.status == RunStatus.REMEDIATION_REQUIRED:
             exceptions.append(GovernanceException(code="REMEDIATION_REQUIRED", severity="high", message="Workflow requires remediation.", workflow_id=run.id))
         if run.ci_validation is not None and not run.ci_validation.passed:
