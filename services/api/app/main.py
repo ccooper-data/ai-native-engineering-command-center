@@ -35,8 +35,8 @@ def get_run(run_id: UUID) -> WorkflowRun:
 
 
 @app.post("/api/v1/runs/{run_id}/approval", response_model=WorkflowRun)
-def approve_run(run_id: UUID, decision: ApprovalDecision) -> WorkflowRun:
-    try: run = workflow_service.record_human_approval(run_id, decision)
+def approve_run(run_id: UUID, decision: ApprovalDecision, commit_sha: str) -> WorkflowRun:
+    try: run = workflow_service.record_human_approval(run_id, decision, commit_sha)
     except ValueError as exc: raise HTTPException(status_code=409, detail=str(exc)) from exc
     if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
     return run
