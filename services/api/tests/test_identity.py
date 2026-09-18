@@ -3,7 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.identity import (
-    AssertionReplayGuard,
+    InMemoryAssertionReplayGuard,
     AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
@@ -82,7 +82,7 @@ def test_incident_resolver_role_has_only_incident_resolution_capability() -> Non
 
 
 def test_sensitive_identity_assertion_cannot_be_replayed() -> None:
-    guard = AssertionReplayGuard()
+    guard = InMemoryAssertionReplayGuard()
     identity_assertion = assertion()
     guard.consume(identity_assertion)
     with pytest.raises(IdentityPolicyError, match="already been consumed"):
