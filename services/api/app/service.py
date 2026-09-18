@@ -243,6 +243,7 @@ class EngineeringWorkflowService:
                     branch_name=branch_name,
                     starting_commit_sha=starting_sha,
                     observed_commit_sha=observed_sha,
+                    mutation_actor="repository-executor",
                 )
                 run.audit_events.append(AuditEvent(agent="repository", action="rollback_verification", status="critical", commit_sha=observed_sha))
                 run.status = RunStatus.FAILED
@@ -267,6 +268,8 @@ class EngineeringWorkflowService:
         incident = run.repository_incident
         if incident is None or incident.resolved:
             raise ValueError("No unresolved repository incident exists")
+        if incident.mutation_actor is not None and resolution.resolver == incident.mutation_actor:
+            raise ValueError("Critical repository incident requires an independent resolver")
         if not resolution.repository_state_verified:
             raise ValueError("Incident resolution requires verified repository state")
         if resolution.restored_commit_sha != observed_current_sha:
