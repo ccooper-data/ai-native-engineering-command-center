@@ -193,6 +193,18 @@ class GovernanceEvidence(BaseModel):
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class RepositoryIncident(BaseModel):
+    severity: str = Field(pattern="^critical$")
+    category: str
+    message: str
+    branch_name: str
+    starting_commit_sha: str = Field(min_length=40, max_length=40)
+    observed_commit_sha: str = Field(min_length=40, max_length=40)
+    requires_human_intervention: bool = True
+    resolved: bool = False
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class GovernanceException(BaseModel):
     code: str
     severity: str = Field(pattern="^(info|warning|high|critical)$")
@@ -257,6 +269,7 @@ class ManagementRunView(BaseModel):
     audit_events: list[AuditEvent] = Field(default_factory=list)
     traceability: list[TraceabilityItem] = Field(default_factory=list)
     chain_of_custody: ChainOfCustody
+    repository_incident: RepositoryIncident | None = None
     readiness: GovernanceReadiness
     created_at: datetime
 
@@ -273,6 +286,7 @@ class WorkflowRun(BaseModel):
     engineering_usage: ModelUsageArtifact | None = None
     repository_dry_run: RepositoryDryRunArtifact | None = None
     verified_mutation_commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
+    repository_incident: RepositoryIncident | None = None
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
