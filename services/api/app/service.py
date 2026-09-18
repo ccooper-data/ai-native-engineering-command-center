@@ -40,7 +40,7 @@ from .repository_tools import (
     RepositoryExecutor,
     RepositoryPolicyError,
 )
-from .source_preflight import validate_source_preflight
+from .source_preflight import SourcePreflightFinding, SourcePreflightResult, validate_source_preflight
 
 
 class RunRepository(Protocol):
@@ -260,7 +260,22 @@ class EngineeringWorkflowService:
         if run.engineering is None:
             raise ValueError("Engineering artifact is required before repository mutation")
         try:
-            preflight = validate_source_preflight(run.engineering)
+            if run.source_preflight is not None:
+                preflight = SourcePreflightResult(
+                    artifact_digest=run.source_preflight.artifact_digest,
+                    passed=run.source_preflight.passed,
+                    findings=[
+                        SourcePreflightFinding(
+                            path=finding.path,
+                            check=finding.check,
+                            passed=finding.passed,
+                            message=finding.message,
+                        )
+                        for finding in run.source_preflight.findings
+                    ],
+                )
+            else:
+                preflight = validate_source_preflight(run.engineering)
             result: RepositoryExecutionResult = executor.apply(run.engineering, preflight=preflight)
         except RepositoryPolicyError as exc:
             message = str(exc)
