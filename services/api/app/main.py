@@ -1,7 +1,6 @@
 from contextlib import asynccontextmanager
-from uuid import UUID
-
 from typing import Annotated
+from uuid import UUID
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
