@@ -231,7 +231,7 @@ class EngineeringWorkflowService:
         return self.repository.save(run)
 
     def record_human_approval(
-        self, run_id: UUID, decision: ApprovalDecision
+        self, run_id: UUID, decision: ApprovalDecision, expected_commit_sha: str
     ) -> WorkflowRun | None:
         run = self.repository.get(run_id)
         if run is None:
@@ -240,6 +240,8 @@ class EngineeringWorkflowService:
             raise ValueError("Workflow is not eligible for human approval")
         if run.ci_validation is None or not run.ci_validation.passed:
             raise ValueError("Successful executable CI evidence is required before human approval")
+        if run.ci_validation.commit_sha != expected_commit_sha:
+            raise ValueError("Human approval must target the current validated commit SHA")
         run.approval = ApprovalArtifact(
             approved=decision.approved,
             approver=decision.approver,
