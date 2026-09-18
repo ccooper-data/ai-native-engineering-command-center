@@ -205,9 +205,11 @@ The key design principle is simple: **AI may reason about engineering work witho
 
 ## Current status
 
-**Governed engineering core: implemented and under final convergence/release review.**
+**Governed engineering portfolio baseline: complete and CI-validated.**
 
-The remaining work is primarily portfolio/release convergence: final architecture review, documentation/evidence polish, release-baseline validation, and clearly separating implemented behavior from future production integrations.
+Validated portfolio baseline: `5bd249a0820fc68b1c7414ce2092abe19f1f22b2` — GitHub Actions CI #337 passed backend, frontend, and security gates.
+
+Further work is intentionally scoped as production integration or future enhancement rather than unfinished core engineering.
 
 ## Scope boundaries / future production integrations
 
