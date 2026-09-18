@@ -120,6 +120,14 @@ class QualityGateArtifact(BaseModel):
     decision: str
 
 
+class RepositoryDryRunArtifact(BaseModel):
+    passed: bool
+    branch_name: str
+    proposed_paths: list[str]
+    commit_message: str
+    mutation_performed: bool = False
+
+
 class CIJobEvidence(BaseModel):
     name: str
     conclusion: str
@@ -180,6 +188,7 @@ class WorkflowRun(BaseModel):
     architecture_usage: ModelUsageArtifact | None = None
     engineering: EngineeringArtifact | None = None
     engineering_usage: ModelUsageArtifact | None = None
+    repository_dry_run: RepositoryDryRunArtifact | None = None
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
