@@ -193,6 +193,16 @@ Readiness is fail-closed. A workflow can reach `READY_FOR_DRAFT_PR` only when re
 9. **Adversarial tests validate control composition, not only happy paths.**
 10. **Merge and deployment remain separate human-controlled authorities.**
 
+## Architecture evidence
+
+For the compact architecture, threat/control map, evidence chain, authorization model, adversarial validation, and production boundaries, see [Architecture & Governance Evidence](docs/ARCHITECTURE_GOVERNANCE.md).
+
+## Recruiter / reviewer summary
+
+**AI-Native Engineering Command Center** is a portfolio-grade AI engineering control plane demonstrating multi-agent orchestration plus secure repository governance. It combines real-model-capable Planning/Architecture/Engineering agents with deterministic source validation, bounded repository mutation, immutable SHA evidence, CI/security gates, authenticated human decision rights, replay-resistant authorization, incident recovery, adversarial regression testing, and management readiness reporting.
+
+The key design principle is simple: **AI may reason about engineering work without automatically inheriting authority to mutate, approve, merge, or deploy it.**
+
 ## Current status
 
 **Governed engineering core: implemented and under final convergence/release review.**
