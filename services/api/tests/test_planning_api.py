@@ -3,8 +3,8 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from app.contracts import CIJobEvidence, CIValidationArtifact
 from app.api_identity import verified_approval_assertion
+from app.contracts import CIJobEvidence, CIValidationArtifact
 from app.identity import AuthorizationContext, IdentityAssertion, VerificationProvenance
 from app.main import app, workflow_service
 
