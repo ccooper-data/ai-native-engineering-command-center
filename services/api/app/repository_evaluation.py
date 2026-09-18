@@ -8,6 +8,16 @@ from .repository_tools import (
 )
 
 
+BENCHMARK_SPECIFICATION_VERSION = "repository-adversarial-v1"
+BENCHMARK_SCENARIO_IDS = [
+    "protected-main-branch",
+    "protected-github-workflow",
+    "path-traversal",
+    "branch-substitution",
+    "post-write-content-corruption",
+]
+
+
 class RepositoryFaultMetrics(BaseModel):
     faults_injected: int
     faults_detected: int
