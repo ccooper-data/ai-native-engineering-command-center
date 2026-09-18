@@ -1,5 +1,5 @@
 from app.capabilities import evaluate_post_approval_capability
-from app.contracts import ApprovalArtifact, CIValidationArtifact, WorkflowRun
+from app.contracts import ActorIdentity, ApprovalArtifact, CIValidationArtifact, WorkflowRun
 
 SHA = "a" * 40
 
