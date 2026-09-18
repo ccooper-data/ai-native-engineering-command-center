@@ -17,7 +17,8 @@ from .contracts import (
     WorkflowRun,
 )
 from .graph import build_engineering_graph
-from .identity import require_human_capability
+from .authorization import authorize_sensitive_action
+from .identity import IdentityAssertion
 from .llm import build_structured_llm
 from .preflight import RunCostBudget
 from .providers import (
@@ -30,6 +31,7 @@ from .providers import (
     PlanningProvider,
 )
 from .quality import MockQAProvider, MockSecurityProvider
+from .replay_store import SqlAssertionReplayGuard
 from .repository_tools import (
     DryRunRepositoryExecutor,
     RepositoryExecutionResult,
@@ -262,6 +264,7 @@ class EngineeringWorkflowService:
         self,
         run_id: UUID,
         resolution: IncidentResolution,
+        assertion: IdentityAssertion,
         observed_current_sha: str,
     ) -> WorkflowRun | None:
         run = self.repository.get(run_id)
@@ -270,8 +273,14 @@ class EngineeringWorkflowService:
         incident = run.repository_incident
         if incident is None or incident.resolved:
             raise ValueError("No unresolved repository incident exists")
-        require_human_capability(resolution.resolver, "resolve-repository-incident")
-        if incident.mutation_actor is not None and resolution.resolver.identity_id == incident.mutation_actor.identity_id:
+        resolver = authorize_sensitive_action(
+            assertion,
+            SqlAssertionReplayGuard(),
+            capability="resolve-repository-incident",
+            workflow_id=str(run.id),
+            commit_sha=observed_current_sha,
+        )
+        if incident.mutation_actor is not None and resolver.identity_id == incident.mutation_actor.identity_id:
             raise ValueError("Critical repository incident requires an independent resolver")
         if not resolution.repository_state_verified:
             raise ValueError("Incident resolution requires verified repository state")
@@ -290,7 +299,7 @@ class EngineeringWorkflowService:
                 action="repository_incident_resolved",
                 status="resolved",
                 commit_sha=resolution.restored_commit_sha,
-                evidence_refs=[resolution.resolver.identity_id, resolution.rationale],
+                evidence_refs=[resolver.identity_id, resolution.rationale],
             )
         )
         return self.repository.save(run)
@@ -319,7 +328,7 @@ class EngineeringWorkflowService:
         return self.repository.save(run)
 
     def record_human_approval(
-        self, run_id: UUID, decision: ApprovalDecision, expected_commit_sha: str
+        self, run_id: UUID, decision: ApprovalDecision, assertion: IdentityAssertion, expected_commit_sha: str
     ) -> WorkflowRun | None:
         run = self.repository.get(run_id)
         if run is None:
@@ -330,10 +339,16 @@ class EngineeringWorkflowService:
             raise ValueError("Successful executable CI evidence is required before human approval")
         if run.ci_validation.commit_sha != expected_commit_sha:
             raise ValueError("Human approval must target the current validated commit SHA")
-        require_human_capability(decision.approver, "approve-workflow")
+        approver = authorize_sensitive_action(
+            assertion,
+            SqlAssertionReplayGuard(),
+            capability="approve-workflow",
+            workflow_id=str(run.id),
+            commit_sha=expected_commit_sha,
+        )
         run.approval = ApprovalArtifact(
             approved=decision.approved,
-            approver=decision.approver,
+            approver=approver,
             rationale=decision.rationale,
             commit_sha=run.ci_validation.commit_sha,
         )
