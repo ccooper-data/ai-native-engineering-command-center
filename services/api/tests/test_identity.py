@@ -4,10 +4,12 @@ import pytest
 
 from app.identity import (
     AssertionReplayGuard,
+    AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
     VerificationProvenance,
     actor_from_verified_assertion,
+    require_authorization_context,
     require_capability,
 )
 
@@ -19,6 +21,7 @@ def verification(**overrides) -> VerificationProvenance:
         "audience": "ai-native-engineering-command-center",
         "verification_method": "oidc-signature",
         "assertion_id": "assertion-123",
+        "authorization_context": AuthorizationContext(capability="approve-workflow", workflow_id="workflow-123", commit_sha="a" * 40),
         "issued_at": now - timedelta(minutes=1),
         "expires_at": now + timedelta(minutes=5),
     }
@@ -84,3 +87,34 @@ def test_sensitive_identity_assertion_cannot_be_replayed() -> None:
     guard.consume(identity_assertion)
     with pytest.raises(IdentityPolicyError, match="already been consumed"):
         guard.consume(identity_assertion)
+
+
+def test_authorization_context_must_match_exact_action_resource_and_sha() -> None:
+    identity_assertion = assertion()
+    require_authorization_context(
+        identity_assertion,
+        capability="approve-workflow",
+        workflow_id="workflow-123",
+        commit_sha="a" * 40,
+    )
+    with pytest.raises(IdentityPolicyError, match="does not match"):
+        require_authorization_context(
+            identity_assertion,
+            capability="resolve-repository-incident",
+            workflow_id="workflow-123",
+            commit_sha="a" * 40,
+        )
+    with pytest.raises(IdentityPolicyError, match="does not match"):
+        require_authorization_context(
+            identity_assertion,
+            capability="approve-workflow",
+            workflow_id="workflow-999",
+            commit_sha="a" * 40,
+        )
+    with pytest.raises(IdentityPolicyError, match="does not match"):
+        require_authorization_context(
+            identity_assertion,
+            capability="approve-workflow",
+            workflow_id="workflow-123",
+            commit_sha="b" * 40,
+        )
