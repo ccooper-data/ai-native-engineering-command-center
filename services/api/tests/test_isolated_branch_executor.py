@@ -27,6 +27,9 @@ class RecordingClient:
     def read_file(self, branch_name: str, path: str) -> str | None:
         return self.files.get(path)
 
+    def get_branch_commit_sha(self, branch_name: str) -> str:
+        return "a" * 40
+
 
 def artifact(branch: str, path: str = "src/feature.py") -> EngineeringArtifact:
     return EngineeringArtifact(
@@ -55,6 +58,7 @@ def test_isolated_executor_writes_only_to_exact_authorized_branch() -> None:
     assert result.branch_name == "agent/governed-mutation-proof"
     assert result.verification_performed is True
     assert result.verified_paths == ["src/feature.py"]
+    assert result.commit_sha == "a" * 40
 
 
 def test_isolated_executor_rejects_branch_substitution() -> None:
