@@ -170,6 +170,7 @@ class ApprovalArtifact(BaseModel):
     approved: bool
     approver: str
     rationale: str
+    commit_sha: str = Field(min_length=40, max_length=40)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
