@@ -193,8 +193,15 @@ class GovernanceEvidence(BaseModel):
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class ActorIdentity(BaseModel):
+    identity_id: str = Field(min_length=1)
+    actor_type: str = Field(pattern="^(human|service|agent)$")
+    authentication_source: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+
+
 class IncidentResolution(BaseModel):
-    resolver: str = Field(min_length=1)
+    resolver: ActorIdentity
     rationale: str = Field(min_length=1)
     restored_commit_sha: str = Field(min_length=40, max_length=40)
     repository_state_verified: bool
@@ -208,7 +215,7 @@ class RepositoryIncident(BaseModel):
     branch_name: str
     starting_commit_sha: str = Field(min_length=40, max_length=40)
     observed_commit_sha: str = Field(min_length=40, max_length=40)
-    mutation_actor: str | None = None
+    mutation_actor: ActorIdentity | None = None
     requires_human_intervention: bool = True
     resolved: bool = False
     resolution: IncidentResolution | None = None
