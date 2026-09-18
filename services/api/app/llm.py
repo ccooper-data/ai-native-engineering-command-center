@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.config import Settings
 from app.preflight import RunCostBudget, reserve_standard_text_cost
+from app.pricing import estimate_standard_text_cost_usd
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -24,6 +25,7 @@ class GenerationMetadata(BaseModel):
     response_id: str | None = None
     usage: ModelUsage = ModelUsage()
     reserved_cost_usd: float = 0.0
+    actual_cost_usd: float | None = None
 
 
 class StructuredLLM(ABC):
@@ -83,6 +85,13 @@ class OpenAIStructuredLLM(StructuredLLM):
                 total_tokens=getattr(usage, "total_tokens", 0) or 0,
             ),
             reserved_cost_usd=reservation.reserved_usd,
+            actual_cost_usd=estimate_standard_text_cost_usd(
+                self.name, self.model, ModelUsage(
+                    input_tokens=getattr(usage, "input_tokens", 0) or 0,
+                    output_tokens=getattr(usage, "output_tokens", 0) or 0,
+                    total_tokens=getattr(usage, "total_tokens", 0) or 0,
+                )
+            ),
         )
         return response.output_parsed
 
