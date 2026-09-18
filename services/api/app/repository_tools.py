@@ -28,7 +28,11 @@ class RepositoryExecutionResult(BaseModel):
 
 class RepositoryExecutor(ABC):
     @abstractmethod
-    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
+    def apply(
+        self,
+        artifact: EngineeringArtifact,
+        preflight: SourcePreflightResult | None = None,
+    ) -> RepositoryExecutionResult:
         raise NotImplementedError
 
 
