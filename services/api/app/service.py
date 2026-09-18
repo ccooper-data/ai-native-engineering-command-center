@@ -15,6 +15,7 @@ from .contracts import (
     RepositoryDryRunArtifact,
     RepositoryIncident,
     RunStatus,
+    SourcePreflightEvidence,
     WorkflowRun,
 )
 from .graph import build_engineering_graph
@@ -32,6 +33,7 @@ from .providers import (
 )
 from .quality import MockQAProvider, MockSecurityProvider
 from .replay_store import SqlAssertionReplayGuard
+from .source_preflight import validate_source_preflight
 from .repository_tools import (
     DryRunRepositoryExecutor,
     RepositoryExecutionResult,
@@ -144,6 +146,21 @@ class EngineeringWorkflowService:
                 AuditEvent(agent="planning", action="record_model_usage", status="success")
             )
         if run.engineering is not None:
+            preflight = validate_source_preflight(run.engineering)
+            run.source_preflight = SourcePreflightEvidence(
+                passed=preflight.passed,
+                checks=[finding.check for finding in preflight.findings],
+                paths=sorted({finding.path for finding in preflight.findings}),
+                tool_evidence=[finding.message for finding in preflight.findings],
+            )
+            run.audit_events.append(
+                AuditEvent(
+                    agent="source-preflight",
+                    action="validate_engineering_source",
+                    status="success" if preflight.passed else "blocked",
+                    evidence_refs=[finding.check for finding in preflight.findings],
+                )
+            )
             try:
                 dry_run = DryRunRepositoryExecutor().apply(run.engineering)
                 run.repository_dry_run = RepositoryDryRunArtifact(
