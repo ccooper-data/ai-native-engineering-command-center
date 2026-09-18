@@ -193,6 +193,19 @@ class GovernanceEvidence(BaseModel):
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class ManagementRunView(BaseModel):
+    id: UUID
+    status: RunStatus
+    original_request: str
+    provider: str
+    model: str
+    governance_evidence: GovernanceEvidence
+    ci_passed: bool | None = None
+    review_passed: bool | None = None
+    approval_state: str
+    created_at: datetime
+
+
 class WorkflowRun(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     original_request: str
