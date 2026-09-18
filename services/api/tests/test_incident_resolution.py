@@ -12,6 +12,7 @@ from app.contracts import (
     RunStatus,
     WorkflowRun,
 )
+from app.database import create_schema
 from app.identity import AuthorizationContext, IdentityAssertion, VerificationProvenance
 from app.service import EngineeringWorkflowService
 
@@ -50,6 +51,7 @@ class MemoryRepository:
 
 
 def incident_run() -> WorkflowRun:
+    create_schema()
     run = WorkflowRun(original_request="Resolve uncertain repository state.")
     run.repository_incident = RepositoryIncident(
         severity="critical",
