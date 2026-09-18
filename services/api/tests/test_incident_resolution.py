@@ -41,7 +41,7 @@ def incident_run() -> WorkflowRun:
     run.verified_mutation_commit_sha = SHA
     run.ci_validation = CIValidationArtifact(run_id=1, commit_sha=SHA, passed=True, jobs=[])
     run.review = ReviewArtifact(passed=True, summary="old", traceability=[], findings=[], recommendation="request_human_approval")
-    run.approval = ApprovalArtifact(approved=True, approver="old", rationale="old", commit_sha=SHA)
+    run.approval = ApprovalArtifact(approved=True, approver=ActorIdentity(identity_id="old-approver", actor_type="human", authentication_source="github-oidc", role="workflow-approver"), rationale="old", commit_sha=SHA)
     return run
 
 
