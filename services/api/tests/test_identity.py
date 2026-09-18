@@ -3,10 +3,10 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.identity import (
-    InMemoryAssertionReplayGuard,
     AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
+    InMemoryAssertionReplayGuard,
     VerificationProvenance,
     actor_from_verified_assertion,
     require_authorization_context,
