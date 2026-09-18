@@ -28,3 +28,16 @@ def test_literal_escaped_newline_in_typescript_is_blocked() -> None:
     result = validate_source_preflight(artifact("app/page.tsx", r"type A = {};\ntype B = {};"))
     assert result.passed is False
     assert result.findings[0].check == "typescript-representation"
+
+
+def test_ruff_preflight_catches_import_order_when_available() -> None:
+    result = validate_source_preflight(
+        artifact(
+            "src/imports.py",
+            "from uuid import UUID\nfrom typing import Annotated\n\nVALUE = (UUID, Annotated)\n",
+        )
+    )
+    ruff = [finding for finding in result.findings if finding.check == "ruff"]
+    assert len(ruff) == 1
+    if "unavailable" not in ruff[0].message:
+        assert ruff[0].passed is False
