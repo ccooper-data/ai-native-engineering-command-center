@@ -193,6 +193,14 @@ class GovernanceEvidence(BaseModel):
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class IncidentResolution(BaseModel):
+    resolver: str = Field(min_length=1)
+    rationale: str = Field(min_length=1)
+    restored_commit_sha: str = Field(min_length=40, max_length=40)
+    repository_state_verified: bool
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class RepositoryIncident(BaseModel):
     severity: str = Field(pattern="^critical$")
     category: str
@@ -202,6 +210,7 @@ class RepositoryIncident(BaseModel):
     observed_commit_sha: str = Field(min_length=40, max_length=40)
     requires_human_intervention: bool = True
     resolved: bool = False
+    resolution: IncidentResolution | None = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
