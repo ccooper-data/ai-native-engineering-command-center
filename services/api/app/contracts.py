@@ -213,6 +213,17 @@ class ManagementSummary(BaseModel):
     exceptions: list[GovernanceException] = Field(default_factory=list)
 
 
+class BenchmarkEvidence(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    commit_sha: str = Field(min_length=40, max_length=40)
+    faults_injected: int = Field(ge=0)
+    faults_detected: int = Field(ge=0)
+    faults_blocked: int = Field(ge=0)
+    detection_rate: float = Field(ge=0.0, le=1.0)
+    blocking_rate: float = Field(ge=0.0, le=1.0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class GovernanceReadiness(BaseModel):
     state: str = Field(pattern="^(BLOCKED|VALIDATING|AWAITING_HUMAN|READY_FOR_DRAFT_PR)$")
     reasons: list[str] = Field(default_factory=list)
