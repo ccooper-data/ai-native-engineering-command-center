@@ -9,6 +9,7 @@ type Architecture = { summary: string; affected_components: string[]; security_c
 type FileChange = { path: string; operation: string; purpose: string };
 type Engineering = { branch_name: string; summary: string; files: FileChange[]; tests_required: string[] };
 type Run = { id: string; status: string; provider: string; model: string; planning: Plan | null; architecture: Architecture | null; engineering: Engineering | null };
+type ManagementRun = { id: string; status: string; governance_evidence: { current_commit_sha: string | null; repository_branch: string | null; ci_run_ids: number[]; remediation_cycles: number; total_tokens: number; estimated_actual_cost_usd: number }; ci_passed: boolean | null; review_passed: boolean | null; approval_state: string };
 type Summary = { total_workflows: number; active_workflows: number; blocked_workflows: number; pending_approvals: number; ci_failures: number; review_failures: number; total_tokens: number; estimated_actual_cost_usd: number };
 
 const API = "http://localhost:8000";
@@ -19,6 +20,7 @@ export default function Home() {
   const [request, setRequest] = useState(example);
   const [run, setRun] = useState<Run | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [managementRun, setManagementRun] = useState<ManagementRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -34,7 +36,8 @@ export default function Home() {
     try {
       const response = await fetch(`${API}/api/v1/runs`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ request }) });
       if (!response.ok) throw new Error(`Workflow failed (${response.status})`);
-      setRun(await response.json()); await refreshSummary();
+      const created: Run = await response.json(); setRun(created); await refreshSummary();
+      const detail = await fetch(`${API}/api/v1/management/runs/${created.id}`); if (detail.ok) setManagementRun(await detail.json());
     } catch (err) { setError(err instanceof Error ? err.message : "Unexpected error"); }
     finally { setLoading(false); }
   }
