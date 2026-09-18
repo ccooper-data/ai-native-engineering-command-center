@@ -86,3 +86,9 @@ li + li { margin-top:5px; }
 .readiness h2 { color:#dff8ff; font-size:18px; }
 .readiness p:not(.label) { margin:3px 0; color:#8fa6b4; font-size:11px; }
 @media (max-width:650px) { .readiness{grid-template-columns:1fr} }
+
+.incident { margin-top:18px; border:1px solid #7b3030; border-left:4px solid #ff6b6b; border-radius:10px; padding:16px; background:#241010; }
+.incident h2 { color:#ffb0b0; margin-bottom:10px; }
+.incident p { color:#d0aaaa; font-size:11px; overflow-wrap:anywhere; }
+.incident strong { display:block; color:#ffd0d0; font-size:11px; margin-top:10px; }
+.incident code { white-space:normal; overflow-wrap:anywhere; }
