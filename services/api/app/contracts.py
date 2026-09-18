@@ -178,7 +178,19 @@ class AuditEvent(BaseModel):
     agent: str
     action: str
     status: str
+    commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
+    evidence_refs: list[str] = Field(default_factory=list)
+    duration_ms: int | None = Field(default=None, ge=0)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class GovernanceEvidence(BaseModel):
+    current_commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
+    repository_branch: str | None = None
+    ci_run_ids: list[int] = Field(default_factory=list)
+    remediation_cycles: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
+    estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
 class WorkflowRun(BaseModel):
@@ -199,6 +211,7 @@ class WorkflowRun(BaseModel):
     review: ReviewArtifact | None = None
     approval: ApprovalArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
+    governance_evidence: GovernanceEvidence = Field(default_factory=GovernanceEvidence)
     provider: str = "mock"
     model: str = "deterministic-v1"
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
