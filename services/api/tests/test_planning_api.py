@@ -31,7 +31,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
             f'/api/v1/runs/{run["id"]}/approval?commit_sha={"0" * 40}',
             json={
                 "approved": True,
-                "approver": "Cory Cooper",
+                "approver": {"identity_id":"github:user:approver","actor_type":"human","authentication_source":"github-oidc","role":"workflow-approver"},
                 "rationale": "Quality and traceability evidence reviewed.",
             },
         )
@@ -60,7 +60,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
             f'/api/v1/runs/{run["id"]}/approval?commit_sha={"b" * 40}',
             json={
                 "approved": True,
-                "approver": "Cory Cooper",
+                "approver": {"identity_id":"github:user:approver","actor_type":"human","authentication_source":"github-oidc","role":"workflow-approver"},
                 "rationale": "Attempt approval against stale commit.",
             },
         )
@@ -70,7 +70,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
             f'/api/v1/runs/{run["id"]}/approval?commit_sha={"a" * 40}',
             json={
                 "approved": True,
-                "approver": "Cory Cooper",
+                "approver": {"identity_id":"github:user:approver","actor_type":"human","authentication_source":"github-oidc","role":"workflow-approver"},
                 "rationale": "Quality, traceability, and executable CI evidence reviewed.",
             },
         )
@@ -78,7 +78,7 @@ def test_workflow_requires_ci_evidence_before_explicit_human_approval() -> None:
         approved = approval.json()
         assert approved["status"] == "approved"
         assert approved["approval"]["approved"] is True
-        assert approved["approval"]["approver"] == "Cory Cooper"
+        assert approved["approval"]["approver"]["identity_id"] == "github:user:approver"
         assert approved["approval"]["commit_sha"] == "a" * 40
         assert approved["audit_events"][-1]["agent"] == "human"
 
