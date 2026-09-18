@@ -11,7 +11,8 @@ type Engineering = { branch_name: string; summary: string; files: FileChange[]; 
 type Run = { id: string; status: string; provider: string; model: string; planning: Plan | null; architecture: Architecture | null; engineering: Engineering | null };
 type ManagementRun = { id: string; status: string; governance_evidence: { current_commit_sha: string | null; repository_branch: string | null; ci_run_ids: number[]; remediation_cycles: number; total_tokens: number; estimated_actual_cost_usd: number }; ci_passed: boolean | null; review_passed: boolean | null; approval_state: string; readiness: { state: "BLOCKED" | "VALIDATING" | "AWAITING_HUMAN" | "READY_FOR_DRAFT_PR"; reasons: string[] }; chain_of_custody: { mutation_sha: string | null; ci_sha: string | null; approval_sha: string | null; aligned: boolean; state: string }; traceability: { acceptance_criterion_id: string; architecture_evidence: string[]; implementation_evidence: string[]; verification_evidence: string[]; reviewer_verification: string[]; covered: boolean }[]; audit_events: { agent: string; action: string; status: string; timestamp: string; commit_sha: string | null; evidence_refs: string[] }[] };
 type GovernanceException = { code: string; severity: string; message: string; workflow_id: string; evidence: string[] };
-type BenchmarkEvidence = { id: string; commit_sha: string; faults_injected: number; faults_detected: number; faults_blocked: number; detection_rate: number; blocking_rate: number; created_at: string };\ntype ControlEffectiveness = { faults_injected: number; faults_detected: number; faults_blocked: number; detection_rate: number; blocking_rate: number };
+type BenchmarkEvidence = { id: string; commit_sha: string; faults_injected: number; faults_detected: number; faults_blocked: number; detection_rate: number; blocking_rate: number; created_at: string };
+type ControlEffectiveness = { faults_injected: number; faults_detected: number; faults_blocked: number; detection_rate: number; blocking_rate: number };
 type Summary = { total_workflows: number; active_workflows: number; blocked_workflows: number; pending_approvals: number; ci_failures: number; review_failures: number; total_tokens: number; estimated_actual_cost_usd: number; exceptions: GovernanceException[] };
 
 const API = "http://localhost:8000";
@@ -22,7 +23,9 @@ export default function Home() {
   const [request, setRequest] = useState(example);
   const [run, setRun] = useState<Run | null>(null);
   const [summary, setSummary] = useState<Summary | null>(null);
-  const [controls, setControls] = useState<ControlEffectiveness | null>(null);\n  const [benchmarkHistory, setBenchmarkHistory] = useState<BenchmarkEvidence[]>([]);\n  const [controlRegression, setControlRegression] = useState(false);
+  const [controls, setControls] = useState<ControlEffectiveness | null>(null);
+  const [benchmarkHistory, setBenchmarkHistory] = useState<BenchmarkEvidence[]>([]);
+  const [controlRegression, setControlRegression] = useState(false);
   const [managementRun, setManagementRun] = useState<ManagementRun | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
