@@ -8,6 +8,8 @@ class VerifyingClient:
     def __init__(self, corrupt: bool = False) -> None:
         self.files: dict[str, str] = {}
         self.corrupt = corrupt
+        self.starting_sha = "0" * 40
+        self.reset_calls: list[str] = []
 
     def create_branch(self, branch_name: str) -> None:
         pass
@@ -25,7 +27,11 @@ class VerifyingClient:
         return self.files.get(path)
 
     def get_branch_commit_sha(self, branch_name: str) -> str:
-        return "a" * 40
+        return self.starting_sha if not self.files else "a" * 40
+
+    def reset_branch_to_commit(self, branch_name: str, commit_sha: str) -> None:
+        self.files.clear()
+        self.reset_calls.append(commit_sha)
 
 
 def artifact() -> EngineeringArtifact:
@@ -48,8 +54,11 @@ def test_isolated_executor_verifies_stored_content_after_write() -> None:
 
 
 def test_isolated_executor_fails_closed_when_stored_content_differs() -> None:
+    client = VerifyingClient(corrupt=True)
     with pytest.raises(RepositoryPolicyError, match="content verification failed"):
-        IsolatedBranchRepositoryExecutor(VerifyingClient(corrupt=True), "agent/verified-change").apply(artifact())
+        IsolatedBranchRepositoryExecutor(client, "agent/verified-change").apply(artifact())
+    assert client.files == {}
+    assert client.reset_calls == ["0" * 40]
 
 
 def test_failed_source_preflight_performs_zero_repository_writes() -> None:
