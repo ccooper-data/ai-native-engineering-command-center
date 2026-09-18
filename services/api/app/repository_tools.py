@@ -18,6 +18,7 @@ class RepositoryExecutionResult(BaseModel):
     dry_run: bool
     verification_performed: bool = False
     verified_paths: list[str] = []
+    commit_sha: str | None = None
 
 
 class RepositoryExecutor(ABC):
@@ -38,6 +39,8 @@ class RepositoryMutationClient(Protocol):
     def delete_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None: ...
 
     def read_file(self, branch_name: str, path: str) -> str | None: ...
+
+    def get_branch_commit_sha(self, branch_name: str) -> str: ...
 
 
 def validate_change_set(artifact: EngineeringArtifact) -> None:
@@ -127,6 +130,9 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
             elif stored != change.content:
                 raise RepositoryPolicyError(f"Post-mutation content verification failed: {normalized}")
             applied.append(normalized)
+        commit_sha = self.client.get_branch_commit_sha(self.authorized_branch)
+        if len(commit_sha) != 40:
+            raise RepositoryPolicyError("Post-mutation commit SHA verification failed")
         return RepositoryExecutionResult(
             branch_name=self.authorized_branch,
             applied_paths=applied,
@@ -134,6 +140,7 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
             dry_run=False,
             verification_performed=True,
             verified_paths=applied,
+            commit_sha=commit_sha,
         )
 
 
