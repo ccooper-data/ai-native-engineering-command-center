@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from .identity import IdentityAssertion, VerificationProvenance
+from .identity import AuthorizationContext, IdentityAssertion, VerificationProvenance
 
 
 class TokenVerificationError(ValueError):
@@ -33,6 +33,9 @@ def assertion_from_verified_token(
     actor_type: str,
     authentication_source: str,
     role: str,
+    capability: str,
+    workflow_id: str,
+    commit_sha: str,
 ) -> IdentityAssertion:
     """Convert cryptographically verified claims into policy input.
 
@@ -52,6 +55,11 @@ def assertion_from_verified_token(
             audience=claims.audience,
             verification_method="cryptographic-token-verifier",
             assertion_id=claims.assertion_id,
+            authorization_context=AuthorizationContext(
+                capability=capability,
+                workflow_id=workflow_id,
+                commit_sha=commit_sha,
+            ),
             issued_at=claims.issued_at,
             expires_at=claims.expires_at,
         ),
