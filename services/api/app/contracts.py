@@ -120,8 +120,17 @@ class QualityGateArtifact(BaseModel):
     decision: str
 
 
-class SourcePreflightEvidence(BaseModel):
+class SourcePreflightFindingEvidence(BaseModel):
+    path: str
+    check: str
     passed: bool
+    message: str
+
+
+class SourcePreflightEvidence(BaseModel):
+    artifact_digest: str = Field(min_length=64, max_length=64)
+    passed: bool
+    findings: list[SourcePreflightFindingEvidence] = Field(default_factory=list)
     checks: list[str] = Field(default_factory=list)
     paths: list[str] = Field(default_factory=list)
     tool_evidence: list[str] = Field(default_factory=list)
