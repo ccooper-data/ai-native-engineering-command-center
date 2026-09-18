@@ -3,6 +3,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from app.identity import (
+    AssertionReplayGuard,
     IdentityAssertion,
     IdentityPolicyError,
     VerificationProvenance,
@@ -17,6 +18,7 @@ def verification(**overrides) -> VerificationProvenance:
         "issuer": "https://token.actions.githubusercontent.com",
         "audience": "ai-native-engineering-command-center",
         "verification_method": "oidc-signature",
+        "assertion_id": "assertion-123",
         "issued_at": now - timedelta(minutes=1),
         "expires_at": now + timedelta(minutes=5),
     }
@@ -74,3 +76,11 @@ def test_incident_resolver_role_has_only_incident_resolution_capability() -> Non
     require_capability(actor, "resolve-repository-incident")
     with pytest.raises(IdentityPolicyError, match="not authorized"):
         require_capability(actor, "approve-workflow")
+
+
+def test_sensitive_identity_assertion_cannot_be_replayed() -> None:
+    guard = AssertionReplayGuard()
+    identity_assertion = assertion()
+    guard.consume(identity_assertion)
+    with pytest.raises(IdentityPolicyError, match="already been consumed"):
+        guard.consume(identity_assertion)
