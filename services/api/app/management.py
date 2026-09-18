@@ -18,6 +18,7 @@ def build_management_view(run: WorkflowRun) -> ManagementRunView:
         review_passed=run.review.passed if run.review is not None else None,
         approval_state=approval_state,
         audit_events=sorted(run.audit_events, key=lambda event: event.timestamp),
+        traceability=run.review.traceability if run.review is not None else [],
         created_at=run.created_at,
     )
 
