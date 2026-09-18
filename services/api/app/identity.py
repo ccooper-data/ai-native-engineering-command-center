@@ -91,8 +91,8 @@ def require_human_capability(actor: ActorIdentity, capability: str) -> None:
         )
 
 
-class AssertionReplayGuard:
-    """Process-local replay guard; durable storage can implement the same boundary later."""
+class InMemoryAssertionReplayGuard:
+    """Process-local replay guard for deterministic tests only; not production authorization."""
 
     def __init__(self) -> None:
         self._consumed: set[str] = set()
