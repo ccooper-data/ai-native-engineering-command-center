@@ -173,31 +173,5 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
         )
 
 
-class GovernedRepositoryExecutor(RepositoryExecutor):
-    """Concrete executor whose only authority comes from a narrow mutation client."""
-
-    def __init__(self, client: RepositoryMutationClient) -> None:
-        self.client = client
-
-    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
-        validate_change_set(artifact)
-        self.client.create_branch(artifact.branch_name)
-        applied: list[str] = []
-        for change in artifact.files:
-            operation = {
-                "create": self.client.create_file,
-                "update": self.client.update_file,
-                "delete": self.client.delete_file,
-            }[change.operation]
-            operation(artifact.branch_name, change, artifact.commit_message)
-            applied.append(str(PurePosixPath(change.path)))
-        return RepositoryExecutionResult(
-            branch_name=artifact.branch_name,
-            applied_paths=applied,
-            commit_message=artifact.commit_message,
-            dry_run=False,
-        )
-
-
 def apply_single_change(change: ProposedFileChange) -> str:
     return str(PurePosixPath(change.path))
