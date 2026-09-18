@@ -1,6 +1,8 @@
 from contextlib import asynccontextmanager
 from uuid import UUID
 
+from typing import Annotated
+
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,8 +16,8 @@ from .contracts import (
     ProductRequest,
     WorkflowRun,
 )
-from .identity import IdentityAssertion
 from .database import SqlRunRepository, create_schema
+from .identity import IdentityAssertion
 from .management import build_management_summary, build_management_view
 from .repository_evaluation import RepositoryFaultMetrics, evaluate_repository_faults
 from .service import EngineeringWorkflowService
@@ -78,7 +80,7 @@ def approve_run(
     run_id: UUID,
     decision: ApprovalDecision,
     commit_sha: str,
-    assertion: IdentityAssertion = Depends(verified_approval_assertion),
+    assertion: Annotated[IdentityAssertion, Depends(verified_approval_assertion)],
 ) -> WorkflowRun:
     try: run = workflow_service.record_human_approval(run_id, decision, assertion, commit_sha)
     except ValueError as exc: raise HTTPException(status_code=409, detail=str(exc)) from exc
