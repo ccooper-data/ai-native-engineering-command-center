@@ -10,7 +10,7 @@ from .contracts import (
 from .governance import build_governance_evidence
 
 
-def build_management_view(run: WorkflowRun) -> ManagementRunView:
+def build_management_view(run: WorkflowRun, control_regression: bool = False) -> ManagementRunView:
     if run.approval is None:
         approval_state = "pending"
     else:
@@ -50,6 +50,9 @@ def build_management_view(run: WorkflowRun) -> ManagementRunView:
     elif not run.approval.approved:
         readiness_state = "BLOCKED"
         reasons.append("Human approval was not granted.")
+    elif control_regression:
+        readiness_state = "BLOCKED"
+        reasons.append("Control-effectiveness benchmark regressed; progression is suspended.")
     else:
         readiness_state = "READY_FOR_DRAFT_PR"
         reasons.append("Mutation, CI, review, and human approval evidence are aligned.")
