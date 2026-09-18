@@ -7,6 +7,7 @@ from .contracts import (
     ApprovalDecision,
     AuditEvent,
     CIValidationArtifact,
+    IncidentResolution,
     ModelUsageArtifact,
     ProductRequest,
     RepositoryDryRunArtifact,
@@ -251,6 +252,41 @@ class EngineeringWorkflowService:
             raise ValueError("Verified mutation must return immutable commit SHA evidence")
         run.verified_mutation_commit_sha = result.commit_sha
         run.audit_events.append(AuditEvent(agent="repository", action="verified_mutation", status="success", commit_sha=result.commit_sha, evidence_refs=result.verified_paths))
+        return self.repository.save(run)
+
+
+    def resolve_repository_incident(
+        self,
+        run_id: UUID,
+        resolution: IncidentResolution,
+        observed_current_sha: str,
+    ) -> WorkflowRun | None:
+        run = self.repository.get(run_id)
+        if run is None:
+            return None
+        incident = run.repository_incident
+        if incident is None or incident.resolved:
+            raise ValueError("No unresolved repository incident exists")
+        if not resolution.repository_state_verified:
+            raise ValueError("Incident resolution requires verified repository state")
+        if resolution.restored_commit_sha != observed_current_sha:
+            raise ValueError("Resolution SHA does not match currently observed repository SHA")
+        incident.resolved = True
+        incident.resolution = resolution
+        run.verified_mutation_commit_sha = None
+        run.ci_validation = None
+        run.review = None
+        run.approval = None
+        run.status = RunStatus.REMEDIATION_REQUIRED
+        run.audit_events.append(
+            AuditEvent(
+                agent="human",
+                action="repository_incident_resolved",
+                status="resolved",
+                commit_sha=resolution.restored_commit_sha,
+                evidence_refs=[resolution.resolver, resolution.rationale],
+            )
+        )
         return self.repository.save(run)
 
     def record_ci_validation(
