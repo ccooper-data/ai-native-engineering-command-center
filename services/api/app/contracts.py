@@ -213,6 +213,14 @@ class ManagementSummary(BaseModel):
     exceptions: list[GovernanceException] = Field(default_factory=list)
 
 
+class ChainOfCustody(BaseModel):
+    mutation_sha: str | None = None
+    ci_sha: str | None = None
+    approval_sha: str | None = None
+    aligned: bool
+    state: str
+
+
 class ManagementRunView(BaseModel):
     id: UUID
     status: RunStatus
@@ -225,6 +233,7 @@ class ManagementRunView(BaseModel):
     approval_state: str
     audit_events: list[AuditEvent] = Field(default_factory=list)
     traceability: list[TraceabilityItem] = Field(default_factory=list)
+    chain_of_custody: ChainOfCustody
     created_at: datetime
 
 
