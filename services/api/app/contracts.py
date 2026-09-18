@@ -213,6 +213,11 @@ class ManagementSummary(BaseModel):
     exceptions: list[GovernanceException] = Field(default_factory=list)
 
 
+class GovernanceReadiness(BaseModel):
+    state: str = Field(pattern="^(BLOCKED|VALIDATING|AWAITING_HUMAN|READY_FOR_DRAFT_PR)$")
+    reasons: list[str] = Field(default_factory=list)
+
+
 class ChainOfCustody(BaseModel):
     mutation_sha: str | None = None
     ci_sha: str | None = None
@@ -234,6 +239,7 @@ class ManagementRunView(BaseModel):
     audit_events: list[AuditEvent] = Field(default_factory=list)
     traceability: list[TraceabilityItem] = Field(default_factory=list)
     chain_of_custody: ChainOfCustody
+    readiness: GovernanceReadiness
     created_at: datetime
 
 
