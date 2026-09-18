@@ -46,3 +46,11 @@ li + li { margin-top:5px; }
 .governanceGrid code { overflow-wrap:anywhere; }
 @media (max-width:1000px) { .governanceGrid{grid-template-columns:repeat(2,1fr)} }
 @media (max-width:650px) { .governanceGrid{grid-template-columns:1fr} }
+
+.timeline { margin-top:16px; border-top:1px solid #1d3442; padding-top:16px; }
+.timeline > h3 { margin-bottom:14px; }
+.timelineEvent { position:relative; display:grid; grid-template-columns:18px 1fr; gap:10px; padding:0 0 16px; }
+.timelineEvent:not(:last-child)::before { content:""; position:absolute; left:5px; top:12px; bottom:0; width:1px; background:#254452; }
+.timelineDot { width:11px; height:11px; border-radius:50%; background:#35c8ef; margin-top:5px; box-shadow:0 0 0 3px rgba(53,200,239,.12); }
+.timelineEvent p { margin:0 0 3px; color:#c5d5de; font-size:12px; }
+.timelineEvent small { display:block; color:#718795; font-size:10px; line-height:1.5; }
