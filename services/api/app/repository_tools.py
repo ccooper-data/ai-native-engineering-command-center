@@ -16,6 +16,8 @@ class RepositoryExecutionResult(BaseModel):
     applied_paths: list[str]
     commit_message: str
     dry_run: bool
+    verification_performed: bool = False
+    verified_paths: list[str] = []
 
 
 class RepositoryExecutor(ABC):
@@ -34,6 +36,8 @@ class RepositoryMutationClient(Protocol):
     def update_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None: ...
 
     def delete_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None: ...
+
+    def read_file(self, branch_name: str, path: str) -> str | None: ...
 
 
 def validate_change_set(artifact: EngineeringArtifact) -> None:
@@ -115,12 +119,21 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
                 "delete": self.client.delete_file,
             }[change.operation]
             operation(self.authorized_branch, change, artifact.commit_message)
-            applied.append(str(PurePosixPath(change.path)))
+            normalized = str(PurePosixPath(change.path))
+            stored = self.client.read_file(self.authorized_branch, normalized)
+            if change.operation == "delete":
+                if stored is not None:
+                    raise RepositoryPolicyError(f"Post-mutation verification failed for deleted path: {normalized}")
+            elif stored != change.content:
+                raise RepositoryPolicyError(f"Post-mutation content verification failed: {normalized}")
+            applied.append(normalized)
         return RepositoryExecutionResult(
             branch_name=self.authorized_branch,
             applied_paths=applied,
             commit_message=artifact.commit_message,
             dry_run=False,
+            verification_performed=True,
+            verified_paths=applied,
         )
 
 
