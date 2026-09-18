@@ -73,6 +73,23 @@ class DryRunRepositoryExecutor(RepositoryExecutor):
         )
 
 
+class BranchOnlyRepositoryExecutor(RepositoryExecutor):
+    """Creates only an isolated agent branch; never writes files or opens/merges PRs."""
+
+    def __init__(self, client: RepositoryMutationClient) -> None:
+        self.client = client
+
+    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
+        validate_change_set(artifact)
+        self.client.create_branch(artifact.branch_name)
+        return RepositoryExecutionResult(
+            branch_name=artifact.branch_name,
+            applied_paths=[],
+            commit_message=artifact.commit_message,
+            dry_run=False,
+        )
+
+
 class GovernedRepositoryExecutor(RepositoryExecutor):
     """Concrete executor whose only authority comes from a narrow mutation client."""
 
