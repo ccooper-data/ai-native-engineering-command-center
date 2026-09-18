@@ -95,7 +95,11 @@ class LLMArchitectureProvider(ArchitectureProvider):
             f"PRODUCT REQUEST:\n{product_request}\n\n"
             f"APPROVED PLAN:\n{plan.model_dump_json(indent=2)}\n\n"
             "Preserve traceability to the plan and make security, data-flow, API, and "
-            "observability consequences explicit."
+            "observability consequences explicit. Keep the artifact concise enough for a "
+            "bounded model response: at most 8 affected components, 10 data-flow steps, "
+            "8 API changes, 8 data changes, 10 security controls, 8 observability requirements, "
+            "6 architecture decisions, and 12 implementation-sequence steps. Each list item, "
+            "decision, rationale, and consequence should be concise and implementation-ready."
         )
         return self.llm.generate(system=system, prompt=prompt, schema=ArchitectureArtifact)
 
