@@ -17,6 +17,7 @@ from .llm import build_structured_llm
 from .preflight import RunCostBudget
 from .providers import (
     LLMArchitectureProvider,
+    LLMEngineeringProvider,
     LLMPlanningProvider,
     MockArchitectureProvider,
     MockEngineeringProvider,
@@ -60,7 +61,12 @@ class EngineeringWorkflowService:
             self.architecture_provider = LLMArchitectureProvider(architecture_llm)
         else:
             self.architecture_provider = MockArchitectureProvider()
-        self.engineering_provider = MockEngineeringProvider()
+        if self.settings.engineering_llm_enabled and planning_llm is not None:
+            engineering_llm = build_structured_llm(self.settings, self.run_cost_budget)
+            assert engineering_llm is not None
+            self.engineering_provider = LLMEngineeringProvider(engineering_llm)
+        else:
+            self.engineering_provider = MockEngineeringProvider()
         self.qa_provider = MockQAProvider()
         self.security_provider = MockSecurityProvider()
         self.graph = build_engineering_graph(
