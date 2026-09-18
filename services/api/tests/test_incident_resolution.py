@@ -35,6 +35,7 @@ def incident_run() -> WorkflowRun:
         branch_name="agent/test",
         starting_commit_sha="0" * 40,
         observed_commit_sha=SHA,
+        mutation_actor="repository-executor",
     )
     run.verified_mutation_commit_sha = SHA
     run.ci_validation = CIValidationArtifact(run_id=1, commit_sha=SHA, passed=True, jobs=[])
@@ -70,3 +71,16 @@ def test_resolution_rejects_sha_mismatch() -> None:
     resolution = IncidentResolution(resolver="Human Operator", rationale="Checked.", restored_commit_sha=SHA, repository_state_verified=True)
     with pytest.raises(ValueError, match="currently observed"):
         service.resolve_repository_incident(run.id, resolution, "b" * 40)
+
+
+def test_incident_actor_cannot_self_resolve_critical_incident() -> None:
+    run = incident_run()
+    service = EngineeringWorkflowService(MemoryRepository(run))
+    resolution = IncidentResolution(
+        resolver="repository-executor",
+        rationale="Self-resolution must not be sufficient.",
+        restored_commit_sha=SHA,
+        repository_state_verified=True,
+    )
+    with pytest.raises(ValueError, match="independent resolver"):
+        service.resolve_repository_incident(run.id, resolution, SHA)
