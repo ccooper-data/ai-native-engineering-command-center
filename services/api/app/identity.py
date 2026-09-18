@@ -30,3 +30,19 @@ def actor_from_verified_assertion(assertion: IdentityAssertion) -> ActorIdentity
         authentication_source=assertion.authentication_source,
         role=assertion.role,
     )
+
+
+ROLE_CAPABILITIES: dict[str, set[str]] = {
+    "workflow-approver": {"approve-workflow"},
+    "incident-resolver": {"resolve-repository-incident"},
+    "repository-mutation": {"mutate-isolated-repository"},
+    "reviewer": {"independent-review"},
+}
+
+
+def require_capability(actor: ActorIdentity, capability: str) -> None:
+    allowed = ROLE_CAPABILITIES.get(actor.role, set())
+    if capability not in allowed:
+        raise IdentityPolicyError(
+            f"Actor role {actor.role!r} is not authorized for capability {capability!r}"
+        )
