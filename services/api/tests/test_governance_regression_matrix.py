@@ -14,10 +14,10 @@ from app.contracts import (
 )
 from app.database import create_schema
 from app.identity import (
-    InMemoryAssertionReplayGuard,
     AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
+    InMemoryAssertionReplayGuard,
     VerificationProvenance,
     require_authorization_context,
     require_human_capability,
