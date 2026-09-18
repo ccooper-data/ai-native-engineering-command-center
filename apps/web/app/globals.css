@@ -65,3 +65,12 @@ li + li { margin-top:5px; }
 .traceRow span { color:#b9cbd5; font-size:11px; font-weight:700; }
 .traceRow small,.muted { color:#718795; font-size:10px; overflow-wrap:anywhere; }
 @media (max-width:800px) { .traceGrid{grid-template-columns:1fr} }
+
+.exceptions { margin-bottom:20px; }
+.exceptionList { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding-top:14px; }
+.exceptionList article { min-height:120px; }
+.exceptionList p { margin:6px 0; }
+.exceptionList small { display:block; color:#718795; font-size:10px; overflow-wrap:anywhere; }
+.badge.warn { color:#f5d889; background:#2b2511; border:1px solid #675a2d; }
+@media (max-width:1000px) { .exceptionList{grid-template-columns:1fr 1fr} }
+@media (max-width:650px) { .exceptionList{grid-template-columns:1fr} }
