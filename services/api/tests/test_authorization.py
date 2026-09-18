@@ -4,10 +4,10 @@ import pytest
 
 from app.authorization import authorize_sensitive_action
 from app.identity import (
-    InMemoryAssertionReplayGuard,
     AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
+    InMemoryAssertionReplayGuard,
     VerificationProvenance,
 )
 
