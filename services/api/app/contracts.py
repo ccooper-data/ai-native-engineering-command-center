@@ -208,6 +208,7 @@ class RepositoryIncident(BaseModel):
     branch_name: str
     starting_commit_sha: str = Field(min_length=40, max_length=40)
     observed_commit_sha: str = Field(min_length=40, max_length=40)
+    mutation_actor: str | None = None
     requires_human_intervention: bool = True
     resolved: bool = False
     resolution: IncidentResolution | None = None
