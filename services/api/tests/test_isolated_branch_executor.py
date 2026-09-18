@@ -30,6 +30,9 @@ class RecordingClient:
     def get_branch_commit_sha(self, branch_name: str) -> str:
         return "a" * 40
 
+    def reset_branch_to_commit(self, branch_name: str, commit_sha: str) -> None:
+        self.files.clear()
+
 
 def artifact(branch: str, path: str = "src/feature.py") -> EngineeringArtifact:
     return EngineeringArtifact(
