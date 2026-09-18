@@ -4,7 +4,7 @@ import pytest
 
 from app.authorization import authorize_sensitive_action
 from app.identity import (
-    AssertionReplayGuard,
+    InMemoryAssertionReplayGuard,
     AuthorizationContext,
     IdentityAssertion,
     IdentityPolicyError,
@@ -36,7 +36,7 @@ def assertion(*, capability: str = "approve-workflow", workflow_id: str = "workf
 
 
 def test_composite_authorization_returns_actor_and_consumes_assertion() -> None:
-    guard = AssertionReplayGuard()
+    guard = InMemoryAssertionReplayGuard()
     item = assertion()
     actor = authorize_sensitive_action(item, guard, capability="approve-workflow", workflow_id="workflow-123", commit_sha="a" * 40)
     assert actor.identity_id == "github:user:approver"
@@ -45,7 +45,7 @@ def test_composite_authorization_returns_actor_and_consumes_assertion() -> None:
 
 
 def test_context_mismatch_does_not_consume_assertion() -> None:
-    guard = AssertionReplayGuard()
+    guard = InMemoryAssertionReplayGuard()
     item = assertion()
     with pytest.raises(IdentityPolicyError, match="does not match"):
         authorize_sensitive_action(item, guard, capability="approve-workflow", workflow_id="other-workflow", commit_sha="a" * 40)
