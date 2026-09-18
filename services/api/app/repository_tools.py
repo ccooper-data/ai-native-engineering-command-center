@@ -37,6 +37,8 @@ class RepositoryMutationClient(Protocol):
 
 
 def validate_change_set(artifact: EngineeringArtifact) -> None:
+    if len(artifact.files) > 6:
+        raise RepositoryPolicyError("Engineering change set exceeds six-file limit")
     if not artifact.branch_name.startswith("agent/"):
         raise RepositoryPolicyError("Agent branches must use the agent/ namespace")
     if artifact.branch_name in {"agent/main", "agent/master"}:
@@ -57,6 +59,8 @@ def validate_change_set(artifact: EngineeringArtifact) -> None:
             raise RepositoryPolicyError(f"Duplicate repository path: {change.path}")
         if change.operation in {"create", "update"} and change.content is None:
             raise RepositoryPolicyError(f"Content required for {change.operation}: {change.path}")
+        if change.content is not None and len(change.content.encode("utf-8")) > 100_000:
+            raise RepositoryPolicyError(f"Generated file exceeds 100 KB limit: {change.path}")
         seen.add(normalized)
 
 
