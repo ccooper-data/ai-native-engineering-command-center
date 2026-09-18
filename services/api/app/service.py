@@ -118,6 +118,8 @@ class EngineeringWorkflowService:
                 input_tokens=generation.usage.input_tokens,
                 output_tokens=generation.usage.output_tokens,
                 total_tokens=generation.usage.total_tokens,
+                reserved_cost_usd=generation.reserved_cost_usd,
+                estimated_actual_cost_usd=generation.actual_cost_usd,
             )
             run.audit_events.append(
                 AuditEvent(agent="planning", action="record_model_usage", status="success")
@@ -132,6 +134,8 @@ class EngineeringWorkflowService:
                 input_tokens=architecture_generation.usage.input_tokens,
                 output_tokens=architecture_generation.usage.output_tokens,
                 total_tokens=architecture_generation.usage.total_tokens,
+                reserved_cost_usd=architecture_generation.reserved_cost_usd,
+                estimated_actual_cost_usd=architecture_generation.actual_cost_usd,
             )
             run.audit_events.append(
                 AuditEvent(
