@@ -43,6 +43,8 @@ class RepositoryMutationClient(Protocol):
 
     def get_branch_commit_sha(self, branch_name: str) -> str: ...
 
+    def reset_branch_to_commit(self, branch_name: str, commit_sha: str) -> None: ...
+
 
 def validate_change_set(artifact: EngineeringArtifact) -> None:
     if len(artifact.files) > 6:
@@ -120,22 +122,29 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
             raise RepositoryPolicyError(f"Source preflight failed: {detail}")
         if artifact.branch_name != self.authorized_branch:
             raise RepositoryPolicyError("Artifact branch does not match authorized branch")
+        starting_sha = self.client.get_branch_commit_sha(self.authorized_branch)
+        if len(starting_sha) != 40:
+            raise RepositoryPolicyError("Unable to establish pre-mutation branch commit SHA")
         applied: list[str] = []
-        for change in artifact.files:
-            operation = {
-                "create": self.client.create_file,
-                "update": self.client.update_file,
-                "delete": self.client.delete_file,
-            }[change.operation]
-            operation(self.authorized_branch, change, artifact.commit_message)
-            normalized = str(PurePosixPath(change.path))
-            stored = self.client.read_file(self.authorized_branch, normalized)
-            if change.operation == "delete":
-                if stored is not None:
-                    raise RepositoryPolicyError(f"Post-mutation verification failed for deleted path: {normalized}")
-            elif stored != change.content:
-                raise RepositoryPolicyError(f"Post-mutation content verification failed: {normalized}")
-            applied.append(normalized)
+        try:
+            for change in artifact.files:
+                operation = {
+                    "create": self.client.create_file,
+                    "update": self.client.update_file,
+                    "delete": self.client.delete_file,
+                }[change.operation]
+                operation(self.authorized_branch, change, artifact.commit_message)
+                normalized = str(PurePosixPath(change.path))
+                stored = self.client.read_file(self.authorized_branch, normalized)
+                if change.operation == "delete":
+                    if stored is not None:
+                        raise RepositoryPolicyError(f"Post-mutation verification failed for deleted path: {normalized}")
+                elif stored != change.content:
+                    raise RepositoryPolicyError(f"Post-mutation content verification failed: {normalized}")
+                applied.append(normalized)
+        except Exception:
+            self.client.reset_branch_to_commit(self.authorized_branch, starting_sha)
+            raise
         commit_sha = self.client.get_branch_commit_sha(self.authorized_branch)
         if len(commit_sha) != 40:
             raise RepositoryPolicyError("Post-mutation commit SHA verification failed")
