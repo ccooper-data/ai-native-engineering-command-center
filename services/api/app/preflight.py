@@ -25,6 +25,9 @@ class RunCostBudget:
     def remaining_usd(self) -> float:
         return max(0.0, self.max_run_cost_usd - self.reserved_usd)
 
+    def can_reserve(self, reservation: CostReservation) -> bool:
+        return self.reserved_usd + reservation.reserved_usd <= self.max_run_cost_usd
+
     def reserve(self, reservation: CostReservation) -> None:
         projected = self.reserved_usd + reservation.reserved_usd
         if projected > self.max_run_cost_usd:
