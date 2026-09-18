@@ -3,10 +3,9 @@ from app.contracts import (
     CIValidationArtifact,
     EngineeringArtifact,
     ModelUsageArtifact,
+    WorkflowRun,
 )
 from app.governance import build_governance_evidence
-from app.contracts import WorkflowRun
-
 
 SHA = "a" * 40
 
