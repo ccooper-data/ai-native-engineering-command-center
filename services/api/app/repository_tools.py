@@ -90,6 +90,36 @@ class BranchOnlyRepositoryExecutor(RepositoryExecutor):
         )
 
 
+class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
+    """Applies validated changes only to a pre-authorized isolated agent branch."""
+
+    def __init__(self, client: RepositoryMutationClient, authorized_branch: str) -> None:
+        if not authorized_branch.startswith("agent/"):
+            raise RepositoryPolicyError("Authorized mutation branch must use agent/ namespace")
+        self.client = client
+        self.authorized_branch = authorized_branch
+
+    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
+        validate_change_set(artifact)
+        if artifact.branch_name != self.authorized_branch:
+            raise RepositoryPolicyError("Artifact branch does not match authorized branch")
+        applied: list[str] = []
+        for change in artifact.files:
+            operation = {
+                "create": self.client.create_file,
+                "update": self.client.update_file,
+                "delete": self.client.delete_file,
+            }[change.operation]
+            operation(self.authorized_branch, change, artifact.commit_message)
+            applied.append(str(PurePosixPath(change.path)))
+        return RepositoryExecutionResult(
+            branch_name=self.authorized_branch,
+            applied_paths=applied,
+            commit_message=artifact.commit_message,
+            dry_run=False,
+        )
+
+
 class GovernedRepositoryExecutor(RepositoryExecutor):
     """Concrete executor whose only authority comes from a narrow mutation client."""
 
