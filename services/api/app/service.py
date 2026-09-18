@@ -17,6 +17,7 @@ from .contracts import (
     WorkflowRun,
 )
 from .graph import build_engineering_graph
+from .identity import require_capability
 from .llm import build_structured_llm
 from .preflight import RunCostBudget
 from .providers import (
@@ -269,6 +270,7 @@ class EngineeringWorkflowService:
         incident = run.repository_incident
         if incident is None or incident.resolved:
             raise ValueError("No unresolved repository incident exists")
+        require_capability(resolution.resolver, "resolve-repository-incident")
         if incident.mutation_actor is not None and resolution.resolver.identity_id == incident.mutation_actor.identity_id:
             raise ValueError("Critical repository incident requires an independent resolver")
         if not resolution.repository_state_verified:
