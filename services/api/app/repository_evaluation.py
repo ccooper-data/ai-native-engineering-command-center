@@ -7,7 +7,6 @@ from .repository_tools import (
     validate_change_set,
 )
 
-
 BENCHMARK_SPECIFICATION_VERSION = "repository-adversarial-v1"
 BENCHMARK_SCENARIO_IDS = [
     "protected-main-branch",
