@@ -213,9 +213,16 @@ class ManagementSummary(BaseModel):
     exceptions: list[GovernanceException] = Field(default_factory=list)
 
 
+class BenchmarkScenario(BaseModel):
+    id: str
+    description: str
+
+
 class BenchmarkEvidence(BaseModel):
     id: UUID = Field(default_factory=uuid4)
     commit_sha: str = Field(min_length=40, max_length=40)
+    specification_version: str
+    scenario_ids: list[str]
     faults_injected: int = Field(ge=0)
     faults_detected: int = Field(ge=0)
     faults_blocked: int = Field(ge=0)
