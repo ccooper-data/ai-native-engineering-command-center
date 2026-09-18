@@ -81,3 +81,8 @@ li + li { margin-top:5px; }
 .custodyGrid span { display:block; color:#718795; font-size:10px; text-transform:uppercase; letter-spacing:.7px; margin-bottom:7px; }
 .custodyGrid code { display:block; overflow-wrap:anywhere; white-space:normal; }
 @media (max-width:800px) { .custodyGrid{grid-template-columns:1fr} }
+
+.readiness { margin-top:18px; display:grid; grid-template-columns:220px 1fr; gap:18px; align-items:center; border:1px solid #254452; border-radius:10px; padding:15px; background:#091820; }
+.readiness h2 { color:#dff8ff; font-size:18px; }
+.readiness p:not(.label) { margin:3px 0; color:#8fa6b4; font-size:11px; }
+@media (max-width:650px) { .readiness{grid-template-columns:1fr} }
