@@ -50,3 +50,13 @@ def test_isolated_executor_verifies_stored_content_after_write() -> None:
 def test_isolated_executor_fails_closed_when_stored_content_differs() -> None:
     with pytest.raises(RepositoryPolicyError, match="content verification failed"):
         IsolatedBranchRepositoryExecutor(VerifyingClient(corrupt=True), "agent/verified-change").apply(artifact())
+
+
+def test_failed_source_preflight_performs_zero_repository_writes() -> None:
+    client = VerifyingClient()
+    bad = artifact()
+    bad.files[0].path = "src/broken.py"
+    bad.files[0].content = "def broken(:\n    pass\n"
+    with pytest.raises(RepositoryPolicyError, match="Source preflight failed"):
+        IsolatedBranchRepositoryExecutor(client, "agent/verified-change").apply(bad)
+    assert client.files == {}
