@@ -70,14 +70,50 @@ The project will use three complementary evaluation layers:
 - **Command Center Product Benchmark** for ambiguous product requests that test planning, requirements, architecture, and traceability.
 - **Security Fault Injection Benchmark** for controlled vulnerabilities and unsafe changes that should be detected and blocked.
 
+## Runtime model selection
+
+The default runtime remains deterministic and does not require paid model access:
+
+```bash
+COMMAND_CENTER_LLM_PROVIDER=mock
+```
+
+A controlled live Planning Agent can be enabled with either provider. API credentials must be supplied through the local/runtime environment and must never be committed to the repository.
+
+OpenAI:
+
+```bash
+export COMMAND_CENTER_LLM_PROVIDER=openai
+export COMMAND_CENTER_OPENAI_API_KEY='<set-locally>'
+export COMMAND_CENTER_OPENAI_MODEL='<supported-model-id>'
+```
+
+Anthropic:
+
+```bash
+export COMMAND_CENTER_LLM_PROVIDER=anthropic
+export COMMAND_CENTER_ANTHROPIC_API_KEY='<set-locally>'
+export COMMAND_CENTER_ANTHROPIC_MODEL='<supported-model-id>'
+```
+
+For the first live validation, only the Planning Agent should use a paid provider. Architecture, Engineering, QA, and Security remain controlled providers so the test has a bounded cost and a small failure surface.
+
+### First live request
+
+Use the benchmark product request:
+
+> Add customer churn forecasting to our SaaS product and expose the results through the mobile app.
+
+The expected output is a schema-validated PlanningArtifact with explicit assumptions, requirements, dependencies, risks, implementation tasks, and testable acceptance criteria. A live Planning Agent has no repository-write, merge, deployment, or approval authority.
+
 ## Milestone 1
 
 Build the first real vertical slice:
 
 > Product request -> Planning Agent -> structured requirements and acceptance criteria -> persisted workflow state -> API -> Command Center UI.
 
-The first milestone will support a mock model provider so orchestration, contracts, persistence, and tests can be developed without unnecessary API spend.
+The first milestone supports deterministic development plus opt-in real OpenAI or Anthropic planning through the same provider-independent contract.
 
 ## Status
 
-**Phase 0: Foundation — in progress**
+**Phase 1: Governed real-agent integration — in progress**
