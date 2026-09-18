@@ -13,6 +13,7 @@ from .contracts import (
 )
 from .database import SqlRunRepository, create_schema
 from .management import build_management_summary, build_management_view
+from .repository_evaluation import RepositoryFaultMetrics, evaluate_repository_faults
 from .service import EngineeringWorkflowService
 
 
@@ -39,6 +40,11 @@ def get_run(run_id: UUID) -> WorkflowRun:
     run = repository.get(run_id)
     if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
     return run
+
+
+@app.get("/api/v1/management/control-effectiveness", response_model=RepositoryFaultMetrics)
+def get_control_effectiveness() -> RepositoryFaultMetrics:
+    return evaluate_repository_faults()
 
 
 @app.get("/api/v1/management/summary", response_model=ManagementSummary)
