@@ -7,18 +7,31 @@ from app.repository_tools import IsolatedBranchRepositoryExecutor, RepositoryPol
 class RecordingClient:
     def __init__(self) -> None:
         self.calls = []
+        self.files: dict[str, str] = {}
 
     def create_branch(self, branch_name: str) -> None:
         raise AssertionError("branch creation is a separate authority stage")
 
     def create_file(self, branch_name, change, message) -> None:
         self.calls.append(("create", branch_name, change.path))
+        self.files[change.path] = change.content
 
     def update_file(self, branch_name, change, message) -> None:
         self.calls.append(("update", branch_name, change.path))
+        self.files[change.path] = change.content
 
     def delete_file(self, branch_name, change, message) -> None:
         self.calls.append(("delete", branch_name, change.path))
+        self.files.pop(change.path, None)
+
+    def read_file(self, branch_name: str, path: str) -> str | None:
+        return self.files.get(path)
+
+    def get_branch_commit_sha(self, branch_name: str) -> str:
+        return "a" * 40
+
+    def reset_branch_to_commit(self, branch_name: str, commit_sha: str) -> None:
+        self.files.clear()
 
 
 def artifact(branch: str, path: str = "src/feature.py") -> EngineeringArtifact:
@@ -46,6 +59,9 @@ def test_isolated_executor_writes_only_to_exact_authorized_branch() -> None:
     result = executor.apply(artifact("agent/governed-mutation-proof"))
     assert client.calls == [("create", "agent/governed-mutation-proof", "src/feature.py")]
     assert result.branch_name == "agent/governed-mutation-proof"
+    assert result.verification_performed is True
+    assert result.verified_paths == ["src/feature.py"]
+    assert result.commit_sha == "a" * 40
 
 
 def test_isolated_executor_rejects_branch_substitution() -> None:

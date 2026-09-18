@@ -2,8 +2,8 @@ import pytest
 
 from app.contracts import EngineeringArtifact, ProposedFileChange
 from app.repository_tools import (
+    BranchOnlyRepositoryExecutor,
     DryRunRepositoryExecutor,
-    GovernedRepositoryExecutor,
     RepositoryPolicyError,
 )
 
@@ -53,13 +53,12 @@ def test_dry_run_accepts_bounded_agent_change() -> None:
     assert result.applied_paths == ["src/capability/service.py"]
 
 
-def test_governed_executor_delegates_only_after_policy_validation() -> None:
+def test_branch_only_executor_delegates_only_after_policy_validation() -> None:
     client = RecordingMutationClient()
-    result = GovernedRepositoryExecutor(client).apply(artifact())
+    result = BranchOnlyRepositoryExecutor(client).apply(artifact())
     assert result.dry_run is False
-    assert result.applied_paths == ["src/capability/service.py"]
-    assert client.calls[0] == ("branch", "agent/test-change")
-    assert client.calls[1][0] == "create"
+    assert result.applied_paths == []
+    assert client.calls == [("branch", "agent/test-change")]
 
 
 @pytest.mark.parametrize(
@@ -74,5 +73,5 @@ def test_governed_executor_delegates_only_after_policy_validation() -> None:
 def test_repository_policy_blocks_unsafe_authority(path: str, branch: str) -> None:
     client = RecordingMutationClient()
     with pytest.raises(RepositoryPolicyError):
-        GovernedRepositoryExecutor(client).apply(artifact(path=path, branch=branch))
+        BranchOnlyRepositoryExecutor(client).apply(artifact(path=path, branch=branch))
     assert client.calls == []

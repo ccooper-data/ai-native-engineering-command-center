@@ -100,10 +100,10 @@ def build_engineering_graph(
         return "review" if state["quality_gate"] and state["quality_gate"].passed else "end"
 
     def review_node(state: EngineeringGraphState) -> dict:
-        plan, engineering, qa, security = state["planning"], state["engineering"], state["qa"], state["security"]
-        if plan is None or engineering is None or qa is None or security is None:
+        plan, architecture, engineering, qa, security = state["planning"], state["architecture"], state["engineering"], state["qa"], state["security"]
+        if plan is None or architecture is None or engineering is None or qa is None or security is None:
             raise ValueError("Reviewer requires complete evidence")
-        review = reviewer.review(plan, engineering, qa, security)
+        review = reviewer.review(plan, architecture, engineering, qa, security)
         return {
             "status": RunStatus.AWAITING_APPROVAL if review.passed else RunStatus.REMEDIATION_REQUIRED,
             "review": review,

@@ -5,6 +5,11 @@ from typing import Protocol
 from pydantic import BaseModel
 
 from .contracts import EngineeringArtifact, ProposedFileChange
+from .source_preflight import (
+    SourcePreflightResult,
+    engineering_artifact_digest,
+    validate_source_preflight,
+)
 
 
 class RepositoryPolicyError(ValueError):
@@ -16,11 +21,18 @@ class RepositoryExecutionResult(BaseModel):
     applied_paths: list[str]
     commit_message: str
     dry_run: bool
+    verification_performed: bool = False
+    verified_paths: list[str] = []
+    commit_sha: str | None = None
 
 
 class RepositoryExecutor(ABC):
     @abstractmethod
-    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
+    def apply(
+        self,
+        artifact: EngineeringArtifact,
+        preflight: SourcePreflightResult | None = None,
+    ) -> RepositoryExecutionResult:
         raise NotImplementedError
 
 
@@ -34,6 +46,12 @@ class RepositoryMutationClient(Protocol):
     def update_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None: ...
 
     def delete_file(self, branch_name: str, change: ProposedFileChange, message: str) -> None: ...
+
+    def read_file(self, branch_name: str, path: str) -> str | None: ...
+
+    def get_branch_commit_sha(self, branch_name: str) -> str: ...
+
+    def reset_branch_to_commit(self, branch_name: str, commit_sha: str) -> None: ...
 
 
 def validate_change_set(artifact: EngineeringArtifact) -> None:
@@ -103,50 +121,55 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
         self.client = client
         self.authorized_branch = authorized_branch
 
-    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
+    def apply(self, artifact: EngineeringArtifact, preflight: SourcePreflightResult | None = None) -> RepositoryExecutionResult:
         validate_change_set(artifact)
+        if preflight is None or preflight.artifact_digest != engineering_artifact_digest(artifact):
+            preflight = validate_source_preflight(artifact)
+        if not preflight.passed:
+            failed = [finding for finding in preflight.findings if not finding.passed]
+            detail = "; ".join(f"{item.path}: {item.message}" for item in failed)
+            raise RepositoryPolicyError(f"Source preflight failed: {detail}")
         if artifact.branch_name != self.authorized_branch:
             raise RepositoryPolicyError("Artifact branch does not match authorized branch")
+        starting_sha = self.client.get_branch_commit_sha(self.authorized_branch)
+        if len(starting_sha) != 40:
+            raise RepositoryPolicyError("Unable to establish pre-mutation branch commit SHA")
         applied: list[str] = []
-        for change in artifact.files:
-            operation = {
-                "create": self.client.create_file,
-                "update": self.client.update_file,
-                "delete": self.client.delete_file,
-            }[change.operation]
-            operation(self.authorized_branch, change, artifact.commit_message)
-            applied.append(str(PurePosixPath(change.path)))
+        try:
+            for change in artifact.files:
+                operation = {
+                    "create": self.client.create_file,
+                    "update": self.client.update_file,
+                    "delete": self.client.delete_file,
+                }[change.operation]
+                operation(self.authorized_branch, change, artifact.commit_message)
+                normalized = str(PurePosixPath(change.path))
+                stored = self.client.read_file(self.authorized_branch, normalized)
+                if change.operation == "delete":
+                    if stored is not None:
+                        raise RepositoryPolicyError(f"Post-mutation verification failed for deleted path: {normalized}")
+                elif stored != change.content:
+                    raise RepositoryPolicyError(f"Post-mutation content verification failed: {normalized}")
+                applied.append(normalized)
+        except Exception as mutation_error:
+            self.client.reset_branch_to_commit(self.authorized_branch, starting_sha)
+            restored_sha = self.client.get_branch_commit_sha(self.authorized_branch)
+            if restored_sha != starting_sha:
+                raise RepositoryPolicyError(
+                    "CRITICAL: rollback verification failed; isolated branch state is uncertain"
+                ) from mutation_error
+            raise
+        commit_sha = self.client.get_branch_commit_sha(self.authorized_branch)
+        if len(commit_sha) != 40:
+            raise RepositoryPolicyError("Post-mutation commit SHA verification failed")
         return RepositoryExecutionResult(
             branch_name=self.authorized_branch,
             applied_paths=applied,
             commit_message=artifact.commit_message,
             dry_run=False,
-        )
-
-
-class GovernedRepositoryExecutor(RepositoryExecutor):
-    """Concrete executor whose only authority comes from a narrow mutation client."""
-
-    def __init__(self, client: RepositoryMutationClient) -> None:
-        self.client = client
-
-    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
-        validate_change_set(artifact)
-        self.client.create_branch(artifact.branch_name)
-        applied: list[str] = []
-        for change in artifact.files:
-            operation = {
-                "create": self.client.create_file,
-                "update": self.client.update_file,
-                "delete": self.client.delete_file,
-            }[change.operation]
-            operation(artifact.branch_name, change, artifact.commit_message)
-            applied.append(str(PurePosixPath(change.path)))
-        return RepositoryExecutionResult(
-            branch_name=artifact.branch_name,
-            applied_paths=applied,
-            commit_message=artifact.commit_message,
-            dry_run=False,
+            verification_performed=True,
+            verified_paths=applied,
+            commit_sha=commit_sha,
         )
 
 

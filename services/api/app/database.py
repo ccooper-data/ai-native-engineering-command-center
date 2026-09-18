@@ -12,6 +12,22 @@ class Base(DeclarativeBase):
     pass
 
 
+class ConsumedAssertionRecord(Base):
+    __tablename__ = "consumed_identity_assertions"
+
+    assertion_id: Mapped[str] = mapped_column(String(255), primary_key=True)
+    expires_at: Mapped[object] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class BenchmarkRecord(Base):
+    __tablename__ = "benchmark_runs"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    commit_sha: Mapped[str] = mapped_column(String(40), index=True)
+    payload: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[object] = mapped_column(DateTime(timezone=True))
+
+
 class WorkflowRunRecord(Base):
     __tablename__ = "workflow_runs"
 
@@ -66,3 +82,8 @@ class SqlRunRepository:
             if record is None:
                 return None
             return WorkflowRun.model_validate(json.loads(record.payload))
+
+    def list(self) -> list[WorkflowRun]:
+        with SessionLocal() as session:
+            records = session.query(WorkflowRunRecord).order_by(WorkflowRunRecord.created_at.desc()).all()
+            return [WorkflowRun.model_validate(json.loads(record.payload)) for record in records]

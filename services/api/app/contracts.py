@@ -120,6 +120,23 @@ class QualityGateArtifact(BaseModel):
     decision: str
 
 
+class SourcePreflightFindingEvidence(BaseModel):
+    path: str
+    check: str
+    passed: bool
+    message: str
+
+
+class SourcePreflightEvidence(BaseModel):
+    artifact_digest: str = Field(min_length=64, max_length=64)
+    passed: bool
+    findings: list[SourcePreflightFindingEvidence] = Field(default_factory=list)
+    checks: list[str] = Field(default_factory=list)
+    paths: list[str] = Field(default_factory=list)
+    tool_evidence: list[str] = Field(default_factory=list)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
 class RepositoryDryRunArtifact(BaseModel):
     passed: bool
     branch_name: str
@@ -145,8 +162,10 @@ class CIValidationArtifact(BaseModel):
 
 class TraceabilityItem(BaseModel):
     acceptance_criterion_id: str
+    architecture_evidence: list[str] = Field(default_factory=list)
     implementation_evidence: list[str]
     verification_evidence: list[str]
+    reviewer_verification: list[str] = Field(default_factory=list)
     covered: bool
 
 
@@ -158,16 +177,23 @@ class ReviewArtifact(BaseModel):
     recommendation: str
 
 
+class ActorIdentity(BaseModel):
+    identity_id: str = Field(min_length=1)
+    actor_type: str = Field(pattern="^(human|service|agent)$")
+    authentication_source: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+
+
 class ApprovalDecision(BaseModel):
     approved: bool
-    approver: str = Field(min_length=2, max_length=200)
     rationale: str = Field(min_length=3, max_length=2000)
 
 
 class ApprovalArtifact(BaseModel):
     approved: bool
-    approver: str
+    approver: ActorIdentity
     rationale: str
+    commit_sha: str = Field(min_length=40, max_length=40)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
@@ -175,7 +201,109 @@ class AuditEvent(BaseModel):
     agent: str
     action: str
     status: str
+    commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
+    evidence_refs: list[str] = Field(default_factory=list)
+    duration_ms: int | None = Field(default=None, ge=0)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class GovernanceEvidence(BaseModel):
+    current_commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
+    repository_branch: str | None = None
+    ci_run_ids: list[int] = Field(default_factory=list)
+    remediation_cycles: int = Field(default=0, ge=0)
+    total_tokens: int = Field(default=0, ge=0)
+    estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
+
+
+class IncidentResolution(BaseModel):
+    rationale: str = Field(min_length=1)
+    restored_commit_sha: str = Field(min_length=40, max_length=40)
+    repository_state_verified: bool
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class RepositoryIncident(BaseModel):
+    severity: str = Field(pattern="^critical$")
+    category: str
+    message: str
+    branch_name: str
+    starting_commit_sha: str = Field(min_length=40, max_length=40)
+    observed_commit_sha: str = Field(min_length=40, max_length=40)
+    mutation_actor: ActorIdentity | None = None
+    requires_human_intervention: bool = True
+    resolved: bool = False
+    resolution: IncidentResolution | None = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class GovernanceException(BaseModel):
+    code: str
+    severity: str = Field(pattern="^(info|warning|high|critical)$")
+    message: str
+    workflow_id: UUID
+    evidence: list[str] = Field(default_factory=list)
+
+
+class ManagementSummary(BaseModel):
+    total_workflows: int = Field(ge=0)
+    active_workflows: int = Field(ge=0)
+    blocked_workflows: int = Field(ge=0)
+    pending_approvals: int = Field(ge=0)
+    ci_failures: int = Field(ge=0)
+    review_failures: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+    estimated_actual_cost_usd: float = Field(ge=0.0)
+    exceptions: list[GovernanceException] = Field(default_factory=list)
+
+
+class BenchmarkScenario(BaseModel):
+    id: str
+    description: str
+
+
+class BenchmarkEvidence(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    commit_sha: str = Field(min_length=40, max_length=40)
+    specification_version: str
+    scenario_ids: list[str]
+    faults_injected: int = Field(ge=0)
+    faults_detected: int = Field(ge=0)
+    faults_blocked: int = Field(ge=0)
+    detection_rate: float = Field(ge=0.0, le=1.0)
+    blocking_rate: float = Field(ge=0.0, le=1.0)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+
+class GovernanceReadiness(BaseModel):
+    state: str = Field(pattern="^(BLOCKED|VALIDATING|AWAITING_HUMAN|READY_FOR_DRAFT_PR)$")
+    reasons: list[str] = Field(default_factory=list)
+
+
+class ChainOfCustody(BaseModel):
+    mutation_sha: str | None = None
+    ci_sha: str | None = None
+    approval_sha: str | None = None
+    aligned: bool
+    state: str
+
+
+class ManagementRunView(BaseModel):
+    id: UUID
+    status: RunStatus
+    original_request: str
+    provider: str
+    model: str
+    governance_evidence: GovernanceEvidence
+    ci_passed: bool | None = None
+    review_passed: bool | None = None
+    approval_state: str
+    audit_events: list[AuditEvent] = Field(default_factory=list)
+    traceability: list[TraceabilityItem] = Field(default_factory=list)
+    chain_of_custody: ChainOfCustody
+    repository_incident: RepositoryIncident | None = None
+    readiness: GovernanceReadiness
+    created_at: datetime
 
 
 class WorkflowRun(BaseModel):
@@ -189,6 +317,9 @@ class WorkflowRun(BaseModel):
     engineering: EngineeringArtifact | None = None
     engineering_usage: ModelUsageArtifact | None = None
     repository_dry_run: RepositoryDryRunArtifact | None = None
+    source_preflight: SourcePreflightEvidence | None = None
+    verified_mutation_commit_sha: str | None = Field(default=None, min_length=40, max_length=40)
+    repository_incident: RepositoryIncident | None = None
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
@@ -196,6 +327,7 @@ class WorkflowRun(BaseModel):
     review: ReviewArtifact | None = None
     approval: ApprovalArtifact | None = None
     audit_events: list[AuditEvent] = Field(default_factory=list)
+    governance_evidence: GovernanceEvidence = Field(default_factory=GovernanceEvidence)
     provider: str = "mock"
     model: str = "deterministic-v1"
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))

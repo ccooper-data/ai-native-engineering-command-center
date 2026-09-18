@@ -1,11 +1,24 @@
 from contextlib import asynccontextmanager
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from .contracts import ApprovalDecision, ProductRequest, WorkflowRun
+from .api_identity import verified_approval_assertion
+from .benchmark_history import detect_benchmark_regression, list_repository_benchmarks
+from .contracts import (
+    ApprovalDecision,
+    BenchmarkEvidence,
+    ManagementRunView,
+    ManagementSummary,
+    ProductRequest,
+    WorkflowRun,
+)
 from .database import SqlRunRepository, create_schema
+from .identity import IdentityAssertion
+from .management import build_management_summary, build_management_view
+from .repository_evaluation import RepositoryFaultMetrics, evaluate_repository_faults
 from .service import EngineeringWorkflowService
 
 
@@ -34,9 +47,41 @@ def get_run(run_id: UUID) -> WorkflowRun:
     return run
 
 
+@app.get("/api/v1/management/control-effectiveness/history", response_model=list[BenchmarkEvidence])
+def get_control_effectiveness_history() -> list[BenchmarkEvidence]:
+    return list_repository_benchmarks()
+
+
+@app.get("/api/v1/management/control-effectiveness/regression")
+def get_control_effectiveness_regression() -> dict[str, bool]:
+    return {"regression": detect_benchmark_regression(list_repository_benchmarks())}
+
+
+@app.get("/api/v1/management/control-effectiveness", response_model=RepositoryFaultMetrics)
+def get_control_effectiveness() -> RepositoryFaultMetrics:
+    return evaluate_repository_faults()
+
+
+@app.get("/api/v1/management/summary", response_model=ManagementSummary)
+def get_management_summary() -> ManagementSummary:
+    return build_management_summary(repository.list())
+
+
+@app.get("/api/v1/management/runs/{run_id}", response_model=ManagementRunView)
+def get_management_run(run_id: UUID) -> ManagementRunView:
+    run = repository.get(run_id)
+    if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
+    return build_management_view(run, detect_benchmark_regression(list_repository_benchmarks()))
+
+
 @app.post("/api/v1/runs/{run_id}/approval", response_model=WorkflowRun)
-def approve_run(run_id: UUID, decision: ApprovalDecision) -> WorkflowRun:
-    try: run = workflow_service.record_human_approval(run_id, decision)
+def approve_run(
+    run_id: UUID,
+    decision: ApprovalDecision,
+    commit_sha: str,
+    assertion: Annotated[IdentityAssertion, Depends(verified_approval_assertion)],
+) -> WorkflowRun:
+    try: run = workflow_service.record_human_approval(run_id, decision, assertion, commit_sha)
     except ValueError as exc: raise HTTPException(status_code=409, detail=str(exc)) from exc
     if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
     return run
