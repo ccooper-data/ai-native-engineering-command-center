@@ -86,7 +86,10 @@ def build_pull_request_draft(
 ## Human approval
 
 - Approved: **{run.approval.approved}**
-- Approver: **{run.approval.approver}**
+- Approver identity: **{run.approval.approver.identity_id}**
+- Approver type: **{run.approval.approver.actor_type}**
+- Authentication source: **{run.approval.approver.authentication_source}**
+- Approval role: **{run.approval.approver.role}**
 - Rationale: {run.approval.rationale}
 - Timestamp: {run.approval.timestamp.isoformat()}
 - Approved commit SHA: `{run.approval.commit_sha}`
