@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
+from .benchmark_history import detect_benchmark_regression, list_repository_benchmarks
 from .contracts import (
     ApprovalDecision,
     BenchmarkEvidence,
@@ -13,7 +14,6 @@ from .contracts import (
     WorkflowRun,
 )
 from .database import SqlRunRepository, create_schema
-from .benchmark_history import detect_benchmark_regression, list_repository_benchmarks
 from .management import build_management_summary, build_management_view
 from .repository_evaluation import RepositoryFaultMetrics, evaluate_repository_faults
 from .service import EngineeringWorkflowService
