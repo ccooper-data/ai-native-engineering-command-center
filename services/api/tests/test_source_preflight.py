@@ -41,3 +41,10 @@ def test_ruff_preflight_catches_import_order_when_available() -> None:
     assert len(ruff) == 1
     if "unavailable" not in ruff[0].message:
         assert ruff[0].passed is False
+
+
+def test_preflight_digest_changes_when_engineering_artifact_changes() -> None:
+    first = artifact("src/good.py", "VALUE = 1\n")
+    result = validate_source_preflight(first)
+    first.files[0].content = "VALUE = 2\n"
+    assert result.artifact_digest != validate_source_preflight(first).artifact_digest
