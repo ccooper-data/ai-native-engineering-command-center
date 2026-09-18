@@ -74,3 +74,10 @@ li + li { margin-top:5px; }
 .badge.warn { color:#f5d889; background:#2b2511; border:1px solid #675a2d; }
 @media (max-width:1000px) { .exceptionList{grid-template-columns:1fr 1fr} }
 @media (max-width:650px) { .exceptionList{grid-template-columns:1fr} }
+
+.custody { margin-top:18px; border-top:1px solid #1d3442; padding-top:16px; }
+.custodyGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.custodyGrid > div { border:1px solid #182e3a; border-radius:9px; padding:12px; background:#07121a; min-width:0; }
+.custodyGrid span { display:block; color:#718795; font-size:10px; text-transform:uppercase; letter-spacing:.7px; margin-bottom:7px; }
+.custodyGrid code { display:block; overflow-wrap:anywhere; white-space:normal; }
+@media (max-width:800px) { .custodyGrid{grid-template-columns:1fr} }
