@@ -220,6 +220,8 @@ class EngineeringWorkflowService:
             return None
         if validation.commit_sha != expected_commit_sha:
             raise ValueError("CI evidence commit SHA does not match the executed change set")
+        if run.verified_mutation_commit_sha is not None and validation.commit_sha != run.verified_mutation_commit_sha:
+            raise ValueError("CI evidence commit SHA does not match verified repository mutation")
         run.ci_validation = validation
         run.audit_events.append(
             AuditEvent(
