@@ -12,6 +12,7 @@ class Claims:
     issuer: str
     subject: str
     audience: str
+    assertion_id: str
     issued_at: datetime
     expires_at: datetime
 
@@ -27,6 +28,7 @@ class RecordingVerifier:
             issuer="https://token.actions.githubusercontent.com",
             subject="github:user:verified",
             audience="ai-native-engineering-command-center",
+            assertion_id="assertion-123",
             issued_at=now - timedelta(minutes=1),
             expires_at=now + timedelta(minutes=5),
         )
