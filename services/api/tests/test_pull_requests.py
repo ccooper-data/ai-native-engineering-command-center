@@ -11,6 +11,7 @@ def approved_run():
     run = service.create_and_run(
         ProductRequest(request="Add churn forecasting to the SaaS product and expose results in mobile.")
     )
+    run.verified_mutation_commit_sha = "a" * 40
     run.ci_validation = CIValidationArtifact(
         run_id=149,
         commit_sha="a" * 40,
@@ -95,3 +96,19 @@ def test_pr_draft_rejects_stale_approval_sha() -> None:
         raise AssertionError("Expected stale approval SHA to block PR publication")
     except ValueError as exc:
         assert "stale" in str(exc)
+
+
+def test_pr_draft_rejects_mismatched_verified_mutation_sha() -> None:
+    run = approved_run()
+    run.verified_mutation_commit_sha = "b" * 40
+    execution = RepositoryExecutionResult(
+        branch_name=run.engineering.branch_name,
+        applied_paths=[change.path for change in run.engineering.files],
+        commit_message=run.engineering.commit_message,
+        dry_run=False,
+    )
+    try:
+        build_pull_request_draft(run, execution)
+        raise AssertionError("Expected mutation/CI/approval SHA mismatch to block PR publication")
+    except ValueError as exc:
+        assert "identical" in str(exc)
