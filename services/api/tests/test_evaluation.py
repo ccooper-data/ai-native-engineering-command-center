@@ -1,4 +1,5 @@
 from app.contracts import (
+    ActorIdentity,
     ApprovalArtifact,
     CIValidationArtifact,
     ModelUsageArtifact,
@@ -14,7 +15,7 @@ SHA = "a" * 40
 def base_run() -> WorkflowRun:
     run = WorkflowRun(original_request="Evaluate governance controls with deterministic fault injection.")
     run.ci_validation = CIValidationArtifact(run_id=207, commit_sha=SHA, passed=True, jobs=[])
-    run.approval = ApprovalArtifact(approved=True, approver="Human Reviewer", rationale="validated", commit_sha=SHA)
+    run.approval = ApprovalArtifact(approved=True, approver=ActorIdentity(identity_id="human-reviewer", actor_type="human", authentication_source="github-oidc", role="workflow-approver"), rationale="validated", commit_sha=SHA)
     run.review = ReviewArtifact(passed=True, summary="ok", traceability=[], findings=[], recommendation="request_human_approval")
     return run
 
