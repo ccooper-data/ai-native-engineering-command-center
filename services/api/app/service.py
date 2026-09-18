@@ -249,7 +249,8 @@ class EngineeringWorkflowService:
         if run.engineering is None:
             raise ValueError("Engineering artifact is required before repository mutation")
         try:
-            result: RepositoryExecutionResult = executor.apply(run.engineering)
+            preflight = validate_source_preflight(run.engineering)
+            result: RepositoryExecutionResult = executor.apply(run.engineering, preflight=preflight)
         except RepositoryPolicyError as exc:
             message = str(exc)
             if message.startswith("CRITICAL: rollback verification failed"):
