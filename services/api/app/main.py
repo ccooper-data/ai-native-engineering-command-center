@@ -4,7 +4,13 @@ from uuid import UUID
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 
-from .contracts import ApprovalDecision, ManagementRunView, ManagementSummary, ProductRequest, WorkflowRun
+from .contracts import (
+    ApprovalDecision,
+    ManagementRunView,
+    ManagementSummary,
+    ProductRequest,
+    WorkflowRun,
+)
 from .database import SqlRunRepository, create_schema
 from .management import build_management_summary, build_management_view
 from .service import EngineeringWorkflowService
