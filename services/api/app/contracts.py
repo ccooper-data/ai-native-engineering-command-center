@@ -51,6 +51,8 @@ class ModelUsageArtifact(BaseModel):
     input_tokens: int = 0
     output_tokens: int = 0
     total_tokens: int = 0
+    reserved_cost_usd: float = 0.0
+    estimated_actual_cost_usd: float | None = None
 
 
 class ArchitectureDecision(BaseModel):
