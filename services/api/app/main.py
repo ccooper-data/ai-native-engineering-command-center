@@ -68,7 +68,7 @@ def get_management_summary() -> ManagementSummary:
 def get_management_run(run_id: UUID) -> ManagementRunView:
     run = repository.get(run_id)
     if run is None: raise HTTPException(status_code=404, detail="Workflow run not found")
-    return build_management_view(run)
+    return build_management_view(run, detect_benchmark_regression(list_repository_benchmarks()))
 
 
 @app.post("/api/v1/runs/{run_id}/approval", response_model=WorkflowRun)
