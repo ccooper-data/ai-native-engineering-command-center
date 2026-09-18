@@ -179,6 +179,7 @@ class WorkflowRun(BaseModel):
     architecture: ArchitectureArtifact | None = None
     architecture_usage: ModelUsageArtifact | None = None
     engineering: EngineeringArtifact | None = None
+    engineering_usage: ModelUsageArtifact | None = None
     qa: QAArtifact | None = None
     security: SecurityArtifact | None = None
     quality_gate: QualityGateArtifact | None = None
