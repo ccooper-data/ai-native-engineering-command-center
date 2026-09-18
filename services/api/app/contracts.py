@@ -214,6 +214,7 @@ class ManagementRunView(BaseModel):
     ci_passed: bool | None = None
     review_passed: bool | None = None
     approval_state: str
+    audit_events: list[AuditEvent] = Field(default_factory=list)
     created_at: datetime
 
 
