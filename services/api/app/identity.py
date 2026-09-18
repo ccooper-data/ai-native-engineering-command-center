@@ -9,6 +9,7 @@ class VerificationProvenance(BaseModel):
     issuer: str = Field(min_length=1)
     audience: str = Field(min_length=1)
     verification_method: str = Field(min_length=1)
+    assertion_id: str = Field(min_length=1)
     issued_at: datetime
     expires_at: datetime
 
@@ -81,3 +82,16 @@ def require_human_capability(actor: ActorIdentity, capability: str) -> None:
         raise IdentityPolicyError(
             f"Capability {capability!r} requires trusted human authentication"
         )
+
+
+class AssertionReplayGuard:
+    """Process-local replay guard; durable storage can implement the same boundary later."""
+
+    def __init__(self) -> None:
+        self._consumed: set[str] = set()
+
+    def consume(self, assertion: IdentityAssertion) -> None:
+        assertion_id = assertion.verification.assertion_id
+        if assertion_id in self._consumed:
+            raise IdentityPolicyError("Identity assertion has already been consumed")
+        self._consumed.add(assertion_id)
