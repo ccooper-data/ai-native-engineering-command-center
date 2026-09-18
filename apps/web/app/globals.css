@@ -54,3 +54,14 @@ li + li { margin-top:5px; }
 .timelineDot { width:11px; height:11px; border-radius:50%; background:#35c8ef; margin-top:5px; box-shadow:0 0 0 3px rgba(53,200,239,.12); }
 .timelineEvent p { margin:0 0 3px; color:#c5d5de; font-size:12px; }
 .timelineEvent small { display:block; color:#718795; font-size:10px; line-height:1.5; }
+
+.traceability { margin-top:18px; border-top:1px solid #1d3442; padding-top:16px; }
+.traceGrid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.traceHead { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.badge { border-radius:999px; padding:4px 7px; font-size:9px; font-weight:900; letter-spacing:.7px; }
+.badge.pass { color:#91f2c3; background:#0d2b21; border:1px solid #205d47; }
+.badge.block { color:#ffaaaa; background:#2b1212; border:1px solid #683333; }
+.traceRow { display:grid; grid-template-columns:110px 1fr; gap:8px; padding:7px 0; border-top:1px solid #142833; }
+.traceRow span { color:#b9cbd5; font-size:11px; font-weight:700; }
+.traceRow small,.muted { color:#718795; font-size:10px; overflow-wrap:anywhere; }
+@media (max-width:800px) { .traceGrid{grid-template-columns:1fr} }
