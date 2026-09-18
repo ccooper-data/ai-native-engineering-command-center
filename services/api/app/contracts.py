@@ -193,6 +193,17 @@ class GovernanceEvidence(BaseModel):
     estimated_actual_cost_usd: float = Field(default=0.0, ge=0.0)
 
 
+class ManagementSummary(BaseModel):
+    total_workflows: int = Field(ge=0)
+    active_workflows: int = Field(ge=0)
+    blocked_workflows: int = Field(ge=0)
+    pending_approvals: int = Field(ge=0)
+    ci_failures: int = Field(ge=0)
+    review_failures: int = Field(ge=0)
+    total_tokens: int = Field(ge=0)
+    estimated_actual_cost_usd: float = Field(ge=0.0)
+
+
 class ManagementRunView(BaseModel):
     id: UUID
     status: RunStatus
