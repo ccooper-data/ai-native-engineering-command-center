@@ -83,5 +83,5 @@ def test_incident_actor_cannot_self_resolve_critical_incident() -> None:
         restored_commit_sha=SHA,
         repository_state_verified=True,
     )
-    with pytest.raises(ValueError, match="independent resolver"):
+    with pytest.raises(ValueError, match="not authorized"):
         service.resolve_repository_incident(run.id, resolution, SHA)
