@@ -33,13 +33,13 @@ from .providers import (
 )
 from .quality import MockQAProvider, MockSecurityProvider
 from .replay_store import SqlAssertionReplayGuard
-from .source_preflight import validate_source_preflight
 from .repository_tools import (
     DryRunRepositoryExecutor,
     RepositoryExecutionResult,
     RepositoryExecutor,
     RepositoryPolicyError,
 )
+from .source_preflight import validate_source_preflight
 
 
 class RunRepository(Protocol):
