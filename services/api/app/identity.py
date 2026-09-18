@@ -5,11 +5,18 @@ from pydantic import BaseModel, Field
 from .contracts import ActorIdentity
 
 
+class AuthorizationContext(BaseModel):
+    capability: str = Field(min_length=1)
+    workflow_id: str = Field(min_length=1)
+    commit_sha: str = Field(min_length=40, max_length=40)
+
+
 class VerificationProvenance(BaseModel):
     issuer: str = Field(min_length=1)
     audience: str = Field(min_length=1)
     verification_method: str = Field(min_length=1)
     assertion_id: str = Field(min_length=1)
+    authorization_context: AuthorizationContext | None = None
     issued_at: datetime
     expires_at: datetime
 
@@ -95,3 +102,21 @@ class AssertionReplayGuard:
         if assertion_id in self._consumed:
             raise IdentityPolicyError("Identity assertion has already been consumed")
         self._consumed.add(assertion_id)
+
+
+def require_authorization_context(
+    assertion: IdentityAssertion,
+    *,
+    capability: str,
+    workflow_id: str,
+    commit_sha: str,
+) -> None:
+    context = assertion.verification.authorization_context
+    if context is None:
+        raise IdentityPolicyError("Identity assertion lacks authorization context")
+    if (
+        context.capability != capability
+        or context.workflow_id != workflow_id
+        or context.commit_sha != commit_sha
+    ):
+        raise IdentityPolicyError("Identity assertion authorization context does not match requested action")
