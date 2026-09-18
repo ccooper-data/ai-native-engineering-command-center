@@ -3,6 +3,7 @@ from uuid import UUID
 
 from .config import Settings, settings
 from .contracts import (
+    ActorIdentity,
     ApprovalArtifact,
     ApprovalDecision,
     AuditEvent,
@@ -243,7 +244,7 @@ class EngineeringWorkflowService:
                     branch_name=branch_name,
                     starting_commit_sha=starting_sha,
                     observed_commit_sha=observed_sha,
-                    mutation_actor="repository-executor",
+                    mutation_actor=ActorIdentity(identity_id="repository-executor", actor_type="service", authentication_source="internal-capability", role="repository-mutation"),
                 )
                 run.audit_events.append(AuditEvent(agent="repository", action="rollback_verification", status="critical", commit_sha=observed_sha))
                 run.status = RunStatus.FAILED
@@ -268,7 +269,7 @@ class EngineeringWorkflowService:
         incident = run.repository_incident
         if incident is None or incident.resolved:
             raise ValueError("No unresolved repository incident exists")
-        if incident.mutation_actor is not None and resolution.resolver == incident.mutation_actor:
+        if incident.mutation_actor is not None and resolution.resolver.identity_id == incident.mutation_actor.identity_id:
             raise ValueError("Critical repository incident requires an independent resolver")
         if not resolution.repository_state_verified:
             raise ValueError("Incident resolution requires verified repository state")
@@ -287,7 +288,7 @@ class EngineeringWorkflowService:
                 action="repository_incident_resolved",
                 status="resolved",
                 commit_sha=resolution.restored_commit_sha,
-                evidence_refs=[resolution.resolver, resolution.rationale],
+                evidence_refs=[resolution.resolver.identity_id, resolution.rationale],
             )
         )
         return self.repository.save(run)
