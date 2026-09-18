@@ -1,4 +1,10 @@
-from .contracts import GovernanceException, ManagementRunView, ManagementSummary, RunStatus, WorkflowRun
+from .contracts import (
+    GovernanceException,
+    ManagementRunView,
+    ManagementSummary,
+    RunStatus,
+    WorkflowRun,
+)
 from .governance import build_governance_evidence
 
 
