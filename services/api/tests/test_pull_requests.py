@@ -52,7 +52,9 @@ def test_pr_draft_contains_end_to_end_governance_evidence() -> None:
     assert "## Architecture decisions" in draft.body
     assert "QA passed: **True**" in draft.body
     assert "Security passed: **True**" in draft.body
-    assert "Approver: **Cory Cooper**" in draft.body
+    assert "Approver identity: **github:user:approver**" in draft.body
+    assert "Authentication source: **github-oidc**" in draft.body
+    assert "Approval role: **workflow-approver**" in draft.body
     assert "AC-001: covered" in draft.body
 
 
