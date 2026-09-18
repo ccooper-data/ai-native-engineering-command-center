@@ -244,6 +244,7 @@ class EngineeringWorkflowService:
             approved=decision.approved,
             approver=decision.approver,
             rationale=decision.rationale,
+            commit_sha=run.ci_validation.commit_sha,
         )
         run.status = RunStatus.APPROVED if decision.approved else RunStatus.REJECTED
         run.audit_events.append(
