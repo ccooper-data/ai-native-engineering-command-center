@@ -5,7 +5,7 @@ from typing import Protocol
 from pydantic import BaseModel
 
 from .contracts import EngineeringArtifact, ProposedFileChange
-from .source_preflight import validate_source_preflight
+from .source_preflight import SourcePreflightResult, engineering_artifact_digest, validate_source_preflight
 
 
 class RepositoryPolicyError(ValueError):
@@ -113,9 +113,10 @@ class IsolatedBranchRepositoryExecutor(RepositoryExecutor):
         self.client = client
         self.authorized_branch = authorized_branch
 
-    def apply(self, artifact: EngineeringArtifact) -> RepositoryExecutionResult:
+    def apply(self, artifact: EngineeringArtifact, preflight: SourcePreflightResult | None = None) -> RepositoryExecutionResult:
         validate_change_set(artifact)
-        preflight = validate_source_preflight(artifact)
+        if preflight is None or preflight.artifact_digest != engineering_artifact_digest(artifact):
+            preflight = validate_source_preflight(artifact)
         if not preflight.passed:
             failed = [finding for finding in preflight.findings if not finding.passed]
             detail = "; ".join(f"{item.path}: {item.message}" for item in failed)
