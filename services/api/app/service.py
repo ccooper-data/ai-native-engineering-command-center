@@ -16,6 +16,7 @@ from .contracts import (
     RepositoryIncident,
     RunStatus,
     SourcePreflightEvidence,
+    SourcePreflightFindingEvidence,
     WorkflowRun,
 )
 from .graph import build_engineering_graph
@@ -148,7 +149,17 @@ class EngineeringWorkflowService:
         if run.engineering is not None:
             preflight = validate_source_preflight(run.engineering)
             run.source_preflight = SourcePreflightEvidence(
+                artifact_digest=preflight.artifact_digest,
                 passed=preflight.passed,
+                findings=[
+                    SourcePreflightFindingEvidence(
+                        path=finding.path,
+                        check=finding.check,
+                        passed=finding.passed,
+                        message=finding.message,
+                    )
+                    for finding in preflight.findings
+                ],
                 checks=[finding.check for finding in preflight.findings],
                 paths=sorted({finding.path for finding in preflight.findings}),
                 tool_evidence=[finding.message for finding in preflight.findings],
