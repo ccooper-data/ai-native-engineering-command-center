@@ -2,8 +2,8 @@ import pytest
 
 from app.contracts import EngineeringArtifact, ProposedFileChange
 from app.repository_tools import (
-    DryRunRepositoryExecutor,
     BranchOnlyRepositoryExecutor,
+    DryRunRepositoryExecutor,
     RepositoryPolicyError,
 )
 
