@@ -40,7 +40,11 @@ from .repository_tools import (
     RepositoryExecutor,
     RepositoryPolicyError,
 )
-from .source_preflight import SourcePreflightFinding, SourcePreflightResult, validate_source_preflight
+from .source_preflight import (
+    SourcePreflightFinding,
+    SourcePreflightResult,
+    validate_source_preflight,
+)
 
 
 class RunRepository(Protocol):
